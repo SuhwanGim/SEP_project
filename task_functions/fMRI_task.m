@@ -40,7 +40,7 @@ function main_task1(SID, ts, runNumber, varargin)
 %       - runNumber
 %   ** Optional Input **
 %       - 'test': Lower reslutions. (1600 900 px)
-%       - 'fmri': If you run this script in MRI . This option can
+%       - 'fmri': If you run this script in sMRI . This option can
 %       receive 's' trigger from sync box.
 %       - 'biopac'
 %   ====================================================================
