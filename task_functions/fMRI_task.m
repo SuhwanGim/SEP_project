@@ -1,89 +1,69 @@
-function main_task1(SID, ts, runNumber, varargin)
+function fMRI_task(SID, ts, sessionNumber, runNumber, ip, port, opts)
 %
 %  :: WORKING ON::
-%       : Suhwan Gim ( Feb. 22. 2021)
+%       : Suhwan Gim (suhwan.gim.psych@gmail.com)
+%               Last updated (May. 13. 2021)
 %
 %  :: Purpose of this study ::
 %       : Participants will be told that you are going to experience
-%       thermal stimulus and interact with someone who can control the next
-%       trial's thermal stimulus intensity. The aim of this study is to
-%       exmaine observing the expression when given thermal stimulus. To
-%       achieve this goal, the trial can be automatically or passiveley
-%       determined by a person. In this phase, they will determine by
-%       evaluedting your facial expression, physiological responses, and
-%       pain ratings.
+%       thermal stimulus and report how you feel.
+%
+%       The aim of this study is to exmaine the extent to which observing
+%       effects on pain expression.
 %
 %   :: The things you should know on this functions
 %       - This function is for running experimental paradigm for Suhwan's
 %       project (disdaq = 10 secs).
 %
 %       1) Thermal_stimulus
-%                           : various intensity will be incldued here
-%       2) rating and interaction
-%                               : report expression about pain stimulus and
-%                               do interaction with experimenter
-%       3) Feedback
-%                   : display the experimenter's decision for the next
-%                   trial
+%       2) rating
+%       3) displaying other's facial expression
 %
 %   :: Requirements for this experiments and fucntions ::
-%    1) Latest version of PsychophysicsToolbox3
-%    2) Pathway
-%    3) Imaging Acquisitions Toolboxes in MATLAB
+%       1) Latest version of PsychophysicsToolbox3
+%       2) Pathway with ATS thermode
+%       3) Imaging Acquisitions Toolboxes in MATLAB
+%       4) additional Webcam driver
+%       5) MRC video camera
 %
 %   ====================================================================%
 %   ** Usage **
-%       main_task('EST001', 'fmri','test');
+%
 %   ** Input **
-%       - SID: name of subject
-%       - ts: trial sequencs
-%       - runNumber
+%       -
+%       -
+%       -
 %   ** Optional Input **
 %       - 'test': Lower reslutions. (1600 900 px)
 %       - 'fmri': If you run this script in sMRI . This option can
 %       receive 's' trigger from sync box.
-%       - 'biopac'
+%
 %   ====================================================================
-% Written by Suhwan Gim
-%% SETUP: DEFAULTS
-testmode = false;
-dofmri = false;
-doBiopac = false;
-doFace = false;
-start_trial = 1;
-%iscomp = 3; % default: macbook keyboard
-%% SETUP: Parse varargin
-for i = 1:length(varargin)
-    if ischar(varargin{i})
-        switch lowser(varargin{i})
-            case {'test','testmode'}
-                testmode = true;
-            case {'fmri','mri'}
-                dofmri = true;
-            case {'button_box'}
-            case {'bio','biopac','biopack'}
-                doBiopac = true;
-                % IT IS FOR MAC-OS
-                %             case {'macbook'}
-                %                 iscomp = 3;
-                %             case {'imac'}
-                %                 iscomp = 1;
-            otherwise
-                disp('Unknown method.')
-        end
+%% SETUP: Check OPTIONS
+if (~isfield(opts,'dofmri')) | (~isfield(opts,'doBiopac'))  | (~isfield(opts,'testmode'))
+    if ismissing(opts.dofmri)
+        error('Check options');
     end
 end
-
-
+%% SETUP: OPTIONS
+testmode = opts.testmode;
+dofmri = opts.dofmri;
+doBiopac = opts.doBiopac;
+opts.doFace = false;
+start_trial = 1;
+%iscomp = 3; % default: macbook keyboard
 %% SETUP: GLOBAL variables
 global theWindow W H window_num;                  % window screen property
 global white red red_Alpha orange bgcolor yellow; % set color
 global window_rect lb rb tb bb scale_H            % scale size parameter
+global lb1 rb1 lb2 rb2;
 global fontsize;                                  % fontsize
+global anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
+global cir_center
 %global Participant; % response box
 %% SETUP: DATA and Subject INFO
-savedir = 'behavior_data';
-[fname,trial_previous, ~] = subjectinfo_check(SID,runNumber,savedir); % subfunction %start_trial
+savedir = fullfile(pwd,'data');
+[fname,trial_previous] = subjectinfo_check_SEP(SID, savedir, sessionNumber,run_number, 'fMRI'); % subfunction %start_trial
 
 if exist(fname, 'file')
     % load previous dat files
@@ -91,12 +71,13 @@ if exist(fname, 'file')
     start_trial = trial_previous; % start with this trial
 else
     % generate and save data
-    dat.ver= 'SEP_V001_Feb-22-2021_Suhwan';
-    dat.subject = SID;
-    dat.datafile = fname; % filename
+    dat.ver= 'SEP_V001_May-13-2021_Suhwan';
+    dat.subject = SID;     % subject name
+    dat.datafile = fname;  % filename
     dat.starttime = datestr(clock, 0); % date-time
     dat.starttime_getsecs = GetSecs; % in the same format of timestamps for each trial
-    dat.runNumber = runNumber;
+    dat.session_number = sessionNumber;
+    dat.run_umber = runNumber;
     dat.ts = ts; % trial sequences (predefiend)
     save(dat.datafile,'dat');
 end
@@ -112,8 +93,8 @@ else
     screens = Screen('Screens');
     window_num = screens(end); % the last window
     window_info = Screen('Resolution', window_num);
-    window_rect = [0 0 1920 1080];
-    %window_rect = [0 0 window_info.width window_info.height]; % full screen
+    %window_rect = [0 0 1920 1080];
+    window_rect = [0 0 window_info.width window_info.height]; % full screen
     fontsize = 36;
     HideCursor();
 end
@@ -125,9 +106,29 @@ tb = H/5+100;           % in 800, it's 310
 bb = H/2+100;           % in 800, it's 450, bb-tb = 340
 scale_H = (bb-tb).*0.25;
 
+anchor_xl = lb-80; % 284
+anchor_xr = rb+20; % 916
+anchor_yu = tb-40; % 170
+anchor_yd = bb+20; % 710
+
+% y location for anchors of rating scales -
+anchor_y = H/2+10+scale_H;
+
 % For rating scale
 lb = 5*W/18;            % left bound
 rb = 13*W/18;           % right bound
+
+% For cont rating scale 
+lb1 = 1*W/18; %
+rb1 = 17*W/18; %
+
+% For overall rating scale
+lb2 = 5*W/18; %
+rb2 = 13*W/18; %s
+
+
+cir_center = [(lb1+rb1)/2 H*3/4+100];
+
 %% SETUP: Screen color
 bgcolor = 80;
 white = 255;
@@ -138,6 +139,7 @@ yellow = [255 220 0];
 %% SETUP: Screen parameters
 font = 'NanumBarunGothic';
 stimText = '+';
+rating_type = 'semicircular';
 %% START: Screen
 theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect);       % start the screen
 Screen('Preference','TextEncodingLocale','ko_KR.UTF-8');                  % text encoding
@@ -146,7 +148,7 @@ Screen('TextSize', theWindow, fontsize);
 Screen('TextFont', theWindow, font); % setting font
 %% START: SCREEN FOR PARTICIPANTS
 try
-    %% INSTRUCTION before task
+    %% PREP: INSTRUCTION before task
     while (1)
         [~,~,keyCode] = KbCheck;
         if keyCode(KbName('space'))==1
@@ -160,15 +162,16 @@ try
     while (1)
         % if this is for fMRI experiment, it will start with "s",
         % but if behavioral, it will start with "r" key.
+        
         if dofmri
-            [~,~,keyCode] = KbCheck(scanner);                                  % ???????????????????????????????????????????????????
-            [~,~,keyCode2] = KbCheck; % experiment
-            if keyCode(KbName('s'))==1
+            [~,~,keyCode] = KbCheck; % experiment
+            if keyCode(KbName('s'))==1 % get 's' from a sync box
                 break
-            elseif keyCode2(KbName('q'))==1
+            elseif keyCode(KbName('q'))==1
                 abort_experiment;
             end
-        else
+            
+        else % for behavior
             [~,~,keyCode] = KbCheck;
             if keyCode(KbName('r'))==1
                 break
@@ -176,10 +179,11 @@ try
                 abort_experiment;
             end
         end
-        display_runmessage(1, 1, dofmri); % until 5 or r; see subfunctions
+        display_runmessage(dofmri); % until 5 or r; see subfunctions
     end
-    %% SETUP: biopac
-    %% do fMRI (disdac_sec = 10)
+    
+    
+    %% PREP: do fMRI (disdac_sec = 10)
     if dofmri
         dat.disdaq_sec = 10;
         fmri_t = GetSecs;
@@ -195,106 +199,120 @@ try
         Screen('Flip', theWindow);
         waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
     end
+    %% PREP: do biopac
+    % I guess it works on only Window OS
+    if doBiopac
+        %
+        bio_t = GetSecs;
+        %data.dat{runNbr}{trial_Number(j)}.biopac_triggertime = bio_t; %BIOPAC timestamp
+        BIOPAC_trigger(ljHandle, biopac_channel, 'on');
+        Screen(theWindow,'FillRect',bgcolor, window_rect);
+        Screen('Flip', theWindow);
+        waitsec_fromstarttime(bio_t, 2); % ADJUST THIS
+    end
+    
+    if doBiopac
+        BIOPAC_trigger(ljHandle, biopac_channel, 'off');
+    end
     
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
     dat.RunStartTime = GetSecs;
-    for trial_i = ((runNumber-1)*5+1):((runNumber)*5) % start_trial:30
-                
-        % Start of Trial
+    for trial_i = start_trial:16 % length(ts.t{1})
+        
+        % Trial begins
         trial_t = GetSecs;
-        dat.dat{trial_i}.TrialStartTimestamp=trial_t;
+        dat.dat{trial_i}.TrialStartTimestamp = trial_t;
         % --------------------------------------------------------- %
-        %         1. ITI
+        %         1. ITI (fixPoint)
         % --------------------------------------------------------- %
-        fixPoint(trial_t, ts.ITI(trial_i,1), white, '+') % ITI
-        dat.dat{trial_i}.ITI_EndTime=GetSecs;
+        DrawFormattedText(theWindow, double('+'), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
+        Screen('Flip', theWindow);
+        %-------------Ready for Pathway------------------
+        main(ip,port,1,program(trial_i)); %select the program
+        WaitSecs(1);
+        main(ip,port,2); %ready to pre-start
+        %-------------------------------------------------
+        waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI);
+        dat.dat{trial_i}.ITI_EndTime = GetSecs;
+        %fixPoint(trial_t, ts.t{runNumber}{trial_i}.ITI, white, '+') % ITI
+        
         
         % --------------------------------------------------------- %
-        %         2. MOVIE CLIP
+        %         2. Thermal stimulus (thermal_stim)
         % --------------------------------------------------------- %
-        %moive_files(trial_i) = fullfile(pwd,'examples1.mov');
-        movie_files = ts.mv_name{trial_i};
-        [starttime, endtime] = run_movie(movie_files);
-        dat.dat{trial_i}.Movie_dura = endtime - starttime;
-        dat.dat{trial_i}.Movie_EndTime=GetSecs;
+        % black screen
+        DrawFormattedText(theWindow, double(''), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
+        Screen('Flip', theWindow);
+        tic;
+        dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
+        dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
+        dat.dat{trial_i}.heat_trigger_duration = toc;
+        waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI + 12); % From start + ITI + thermal (12 sec)
         
         % --------------------------------------------------------- %
-        %         3. ISI1  (ts.ITI(trial_i,2))
+        %         3. ISI1
         % --------------------------------------------------------- %
-        ttp = ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura;
+        ttp = []; % total 
+        ttp = ts.t{runNumber}{trial_i}.ITI + 12 + ts.t{runNumber}{trial_i}.ISI1;
         fixPoint(trial_t, ttp , white, '+') % ITI
         dat.dat{trial_i}.ISI1_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
-        %         4. MATH PROBLEM
+        %         4. Ratings 1 (ratings)
         % --------------------------------------------------------- %
-        secs = 30;
-        [dat.dat{trial_i}.math_response_keyCode, dat.dat{trial_i}.rt, dat.dat{trial_i}.Math_StartTime, dat.dat{trial_i}.Math_EndTime] ...
-            = showMath(ts.math_img{trial_i}, ts.math_alt(trial_i,:), secs); % showMath(mathpath, secs, varargin)
-        %dat.dat{trial_i}.Math_EndTime=GetSecs;
+        ttp = ttp + 5;
+        temp_ratings = [];
+        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating1, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
+        
+        dat.dat{trial_i}.ratings1_end_timestamp = GetSec;
+        dat.dat{trial_i}.ratings1_con_time_fromstart = temp_ratings.con_time_fromstrat;
+        dat.dat{trial_i}.ratings1_con_xy = temp_ratings.con_xy;
+        dat.dat{trial_i}.ratings1_con_clicks = temp_ratings.con_clicks;
+        dat.dat{trial_i}.ratings1_con_r_theta = temp_ratings.con_r_theta;
+                
         
         % --------------------------------------------------------- %
-        %         5. ISI2 ts.ITI(trial_i,3)
+        %         5. ISI2
         % --------------------------------------------------------- %
-        tts = ts.ITI(trial_i,3)  + ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura + secs ;
-        fixPoint(trial_t, tts , white, '+') % ITI
+        ttp = ttp + ts.t{runNumber}{trial_i}.ISI2;
+        fixPoint(trial_t, ttp , white, '+') % ISI2
         dat.dat{trial_i}.ISI2_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
-        %         6. Resting-state
+        %         6. Ratings 2
         % --------------------------------------------------------- %
         %fixPoint(trial_t, ts.ITI(trial_i,3), white, '+') % ITI
-        resting_time(10);
-        dat.dat{trial_i}.resting_EndTime=GetSecs;
+        ttp = ttp + 5;
+        temp_ratings = [];
+        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating2, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
         
-        % --------------------------------------------------------- %
-        %         7. ISI3 ts.ITI(trial_i,4)
-        % --------------------------------------------------------- %
-        tts = ts.ITI(trial_i,4) + ts.ITI(trial_i,3) + ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura + secs + 10;
-        fixPoint(trial_t, tts, white, '+') % ITI
-        dat.dat{trial_i}.ISI3_EndTime=GetSecs;
-        
-        % --------------------------------------------------------- %
-        %         8. Short Quiz
-        % --------------------------------------------------------- %
-        [starttime, response , dura_t, endtime] = movie_quiz(ts.quiz_cond{trial_i});
-        dat.dat{trial_i}.ShortQuiz_response = response;
-        dat.dat{trial_i}.ShortQuiz_response_duration = dura_t;
-        dat.dat{trial_i}.ShortQuiz_Dration = endtime - starttime;
-        dat.dat{trial_i}.ShortQuiz_EndTime = GetSecs;
-        % --------------------------------------------------------- %
-        %         9. ISI4 (ts.ITI(trial_i,5))
-        % --------------------------------------------------------- %
-        tts = ts.ITI(trial_i,5) + ts.ITI(trial_i,4) + ts.ITI(trial_i,3) + ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura + secs + 10;
-        fixPoint(trial_t, tts, white, '+') % ITI
-        dat.dat{trial_i}.ISI4_EndTime=GetSecs;
-        
-        % --------------------------------------------------------- %
-        %        10. REPORT level of stress  (one to ten)
-        % --------------------------------------------------------- %
-        dat.dat{trial_i}.ReportStress_EndTime=GetSecs;
+        dat.dat{trial_i}.ratings2_end_timestamp = GetSec;
+        dat.dat{trial_i}.ratings2_con_time_fromstart = temp_ratings.con_time_fromstrat;
+        dat.dat{trial_i}.ratings2_con_xy = temp_ratings.con_xy;
+        dat.dat{trial_i}.ratings2_con_clicks = temp_ratings.con_clicks;
+        dat.dat{trial_i}.ratings2_con_r_theta = temp_ratings.con_r_theta;
         
         % ------------------------------------ %
-        %  End of trial (save data) 5 secs
-        % ------------------------------------ %
-        
+        %  End of trial (save data) 
+        % ------------------------------------ %        
         dat.dat{trial_i}.TrialEndTimestamp=GetSecs;
-        save(dat.datafile, '-append', 'dat');
-        %waitsec_fromstarttime(dat.dat{trial_i}.TrialEndTimestamp,5);
+        if mod(trial_i,2)
+            save(dat.datafile, '-append', 'dat');
+        end
     end
     
     %% FINALZING EXPERIMENT
-    dat.RunEndTime = GetSecs;
-    DrawFormattedText(theWindow, double(stimText), 'center', 'center', white, [], [], [], 1.2);
+    dat.RunEndTime = GetSec;            
+    DrawFormattedText(theWindow, double(' '), 'center', 'center', white, [], [], [], 1.2);
     Screen('Flip', theWindow);
     
     waitsec_fromstarttime(dat.RunEndTime, 10);
     save(dat.datafile, '-append', 'dat');
     waitsec_fromstarttime(GetSecs, 2);
     %% END MESSAGE
-    if runNumber == 6
+    if runNumber == 5
         str = '실험이 종료되었습니다.\n 잠시만 기다려주세요 (space)';
     else
         str = '잠시만 기다려주세요 (space)';
@@ -329,7 +347,7 @@ end % function end
 %                   IN-LINE FUNCTION                                      %
 % ======================================================================= %
 
-function display_runmessage(run_i, run_num, dofmri)
+function display_runmessage(dofmri)
 
 % MESSAGE FOR EACH RUN
 
@@ -338,13 +356,9 @@ function display_runmessage(run_i, run_num, dofmri)
 global theWindow white bgcolor window_rect; % rating scale
 
 if dofmri
-    if run_i <= run_num % you can customize the run start message using run_num and run_i
-        Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
-    end
+    Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
 else
-    if run_i <= run_num
-        Run_start_text = double('참가자가 준비되었으면, r을 눌러주세요.');
-    end
+    Run_start_text = double('참가자가 준비되었으면, r을 눌러주세요.');
 end
 
 % display
@@ -354,67 +368,84 @@ Screen('Flip', theWindow);
 
 end
 
-function abort_experiment(varargin)
 
-% ABORT the experiment
-%
-% abort_experiment(varargin)
-
-str = 'Experiment aborted.';
-
-for i = 1:length(varargin)
-    if ischar(varargin{i})
-        switch varargin{i}
-            % functional commands
-            case {'error'}
-                str = 'Experiment aborted by error.';
-            case {'manual'}
-                str = 'Experiment aborted by the experimenter.';
-        end
-    end
-end
-
-
-ShowCursor; %unhide mouse
-Screen('CloseAll'); %relinquish screen control
-disp(str); %present this text in command window
-
-end
-
-function display_expmessage(msg)
-% diplay_expmessage("");
-% type each MESSAGE
-
-global theWindow white bgcolor window_rect; % rating scale
-
-EXP_start_text = double(msg);
-
-% display
-Screen(theWindow,'FillRect',bgcolor, window_rect);
-DrawFormattedText(theWindow, EXP_start_text, 'center', 'center', white, [], [], [], 1.5);
-Screen('Flip', theWindow);
-
-end
 
 %% ------------------------------------------ %
 %           TASK                              %
 %  ------------------------------------------ %
-function fixPoint(t_time, seconds, color, stimText)
-% fixation point
-global theWindow;
-% stimText = '+';
-% Screen(theWindow,'FillRect', bgcolor, window_rect);
-DrawFormattedText(theWindow, double(stimText), 'center', 'center', color, [], [], [], 1.2);
-Screen('Flip', theWindow);
-waitsec_fromstarttime(t_time, seconds);
+function temp_ratings = get_ratings(rating_type, total_secs, start_t )
+
+global theWindow W H window_num;                  % window screen property
+global white red red_Alpha orange bgcolor yellow; % set color
+global window_rect lb rb tb bb scale_H            % scale size parameter
+global lb1 rb1 lb2 rb2;
+global cir_center
+%%
+if contains(rating_type, 'intensity')
+    msg = '이번 자극이 얼마나 아팠나요?';
+elseif contains(rating_type, 'unpleasantness')
+    msg = '이번 자극이 얼마나 불쾌했나요?';
 end
 
 
-function giveStimulus
+rec_i = 0;
+start_while = GetSecs;
+while GetSecs - start_t < total_secs
+    [x,y,button]=GetMouse(theWindow);
+    rec_i= rec_i+1;
+    % if the point goes further than the semi-circle, move the point to
+    % the closest point
+    radius = (rb1-lb1)/2; % radius
+    theta = atan2(cir_center(2)-y,x-cir_center(1));
+    % current euclidean distance
+    curr_r = sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2);
+    % current angle (0 - 180 deg)
+    curr_theta = rad2deg(-theta+pi);
+    % For control a mouse cursor:
+    % send to diameter of semi-circle
+    if y > cir_center(2) %bb
+        y = cir_center(2); %bb;
+        SetMouse(x,y);
+    end
+    % send to arc of semi-circle
+    if sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2) > radius
+        x = radius*cos(theta)+cir_center(1);
+        y = cir_center(2)-radius*sin(theta);
+        SetMouse(x,y);
+    end
+    
+    msg = double(msg);
+    DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
+    draw_scale('overall_predict_semicircular');
+    Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
+    Screen('Flip', theWindow);
+    
+    % recording
+    temp_ratings.con_time_fromstart(rec_i,1) = GetSecs-start_while;
+    temp_ratings.con_xy(rec_i,:) = [x-cir_center(1) cir_center(2)-y]./radius;
+    temp_ratings.con_clicks(rec_i,:) = button;
+    temp_ratings.con_r_theta(rec_i,:) = [curr_r/radius curr_theta/180]; %radius and degree?
+    
+    
+    if button(1)
+        draw_scale('overall_predict_semicircular');
+        Screen('DrawDots', theWindow, [x y]', 18, red, [0 0], 1);  % Feedback
+        Screen('Flip',theWindow);
+        WaitSecs(min(0.5, 5-(GetSecs-start_while)));
+        ready3=0;
+        while ~ready3 %GetSecs - sTime> 5
+            msg = double(' ');
+            DrawFormattedText(theWindow, msg, 'center', 150, white, [], [], [], 1.2);
+            Screen('Flip',theWindow);
+            if  GetSecs - start_while > 5
+                break
+            end
+        end
+        break;
+    else
+        %do nothing
+    end
+    
 end
 
-
-function getRatings
 end
-
-

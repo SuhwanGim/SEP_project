@@ -1,4 +1,4 @@
-function main_task1(SID, ts, runNumber, varargin)
+function out_task(SID, ts, runNumber, varargin)
 %
 %  :: WORKING ON::
 %       : Suhwan Gim ( Feb. 22. 2021)
