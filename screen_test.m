@@ -11,7 +11,7 @@
 %% Global variable
 global theWindow W H; % window property
 global white red orange bgcolor; % color
-global window_rect prompt_ex lb rb tb bb scale_H promptW promptH; % rating scale
+global window_rect prompt_ex lb rb lb1 rb1 lb2 rb2 tb bb scale_H promptW promptH; % rating scale
 global fontsize anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
 
 
@@ -43,6 +43,18 @@ tb = H/5+100;           % in 800, it's 310
 bb = H/2+100;           % in 800, it's 450, bb-tb = 340
 scale_H = (bb-tb).*0.25;
 
+% y location for anchors of rating scales -
+anchor_y = H/2+10+scale_H;
+anchor_lms = [0.1000 0.2881 0.5966 0.9000];
+
+W = window_rect(3); %width of screen
+H = window_rect(4); %height of screen
+
+
+tb = H/5+100;           % in 800, it's 310
+bb = H/2+100;           % in 800, it's 450, bb-tb = 340
+scale_H = (bb-tb).*0.25;
+
 anchor_xl = lb-80; % 284
 anchor_xr = rb+20; % 916
 anchor_yu = tb-40; % 170
@@ -50,9 +62,29 @@ anchor_yd = bb+20; % 710
 
 % y location for anchors of rating scales -
 anchor_y = H/2+10+scale_H;
-anchor_lms = [0.1000 0.2881 0.5966 0.9000];
-% anchor_lms = [0.061 0.172 0.354 0.533].*(rb-lb)+lb;
-% anchor_lms = [0.014 0.061 0.172 0.354 0.533].*(rb-lb)+lb;
+
+% For rating scale
+lb = 5*W/18;            % left bound
+rb = 13*W/18;           % right bound
+
+% For cont rating scale 
+lb1 = 1*W/18; %
+rb1 = 17*W/18; %
+
+% For overall rating scale
+lb2 = 5*W/18; %
+rb2 = 13*W/18; %s
+
+
+cir_center = [(lb1+rb1)/2 H*3/4+100];
+
+%% SETUP: Screen color
+bgcolor = 80;
+white = 255;
+red = [255 0 0];
+red_Alpha = [255 164 0 130]; % RGB + A(Level of tranceprency)
+orange = [255 164 0];
+yellow = [255 220 0];
 
 %%
 cir_center = [(rb+lb)/2, bb];
