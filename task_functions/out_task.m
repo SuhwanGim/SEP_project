@@ -179,6 +179,7 @@ try
         display_runmessage(1, 1, dofmri); % until 5 or r; see subfunctions
     end
     %% SETUP: biopac
+    
     %% do fMRI (disdac_sec = 10)
     if dofmri
         dat.disdaq_sec = 10;
@@ -195,13 +196,27 @@ try
         Screen('Flip', theWindow);
         waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
     end
+    %% PREP: do biopac
+    % I guess it works on only Window OS
+    if doBiopac
+        %
+        bio_t = GetSecs;
+        %data.dat{runNbr}{trial_Number(j)}.biopac_triggertime = bio_t; %BIOPAC timestamp
+        BIOPAC_trigger(ljHandle, biopac_channel, 'on');
+        Screen(theWindow,'FillRect',bgcolor, window_rect);
+        Screen('Flip', theWindow);
+        waitsec_fromstarttime(bio_t, 2); % ADJUST THIS
+    end
     
+    if doBiopac
+        BIOPAC_trigger(ljHandle, biopac_channel, 'off');
+    end
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
     dat.RunStartTime = GetSecs;
     for trial_i = ((runNumber-1)*5+1):((runNumber)*5) % start_trial:30
-                
+        
         % Start of Trial
         trial_t = GetSecs;
         dat.dat{trial_i}.TrialStartTimestamp=trial_t;

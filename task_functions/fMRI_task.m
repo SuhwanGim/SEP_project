@@ -29,14 +29,19 @@ function fMRI_task(SID, ts, sessionNumber, runNumber, ip, port, opts)
 %   ====================================================================%
 %   ** Usage **
 %
-%   ** Input **
-%       -
-%       -
-%       -
+%   ** In singal **
+%       - Scanner trigger 
+%       - obserber's webcam
+%   ** Out singal **
+%       - Scanner trigger to obs computer
+%       - Pathway trigger to path computer 
 %   ** Optional Input **
 %       - 'test': Lower reslutions. (1600 900 px)
 %       - 'fmri': If you run this script in sMRI . This option can
 %       receive 's' trigger from sync box.
+%       - 'obs' : sent fMRI trigger to observer task computer 
+%       - 'pathway':
+%       - 'webcam':
 %
 %   ====================================================================
 %% SETUP: Check OPTIONS
@@ -48,9 +53,12 @@ end
 %% SETUP: OPTIONS
 testmode = opts.testmode;
 dofmri = opts.dofmri;
-doBiopac = opts.doBiopac;
-opts.doFace = false;
+%doBiopac = opts.doBiopac;
+doWebcam = opts.doFace;
+doPathway = opts.Pathway;
+doSendTrigger = opts.obs;
 start_trial = 1;
+
 %iscomp = 3; % default: macbook keyboard
 %% SETUP: GLOBAL variables
 global theWindow W H window_num;                  % window screen property
@@ -80,6 +88,20 @@ else
     dat.run_umber = runNumber;
     dat.ts = ts; % trial sequences (predefiend)
     save(dat.datafile,'dat');
+end
+%% SETUP: Webcam
+if doWebcam
+    camObj = webcam; % The resoultion of webcam can be modified in WinOS
+    %camObj.Resolution = {''};
+end
+%% SETUP: Load pathway program
+if doPathway
+    path_prog = load_PathProgram('MPC');
+    ts.t{run_i}{trial_i}.stimlv
+end
+%% SETUP: envrioemnt for set 
+if doSendTrigger
+    %set TCP/IP environment 
 end
 %% SETUP: Screen size
 Screen('Clear');
@@ -179,13 +201,17 @@ try
                 abort_experiment;
             end
         end
+        
+        if doSendTrigger
+            % send trigger to observation's computers
+        end
         display_runmessage(dofmri); % until 5 or r; see subfunctions
     end
     
     
-    %% PREP: do fMRI (disdac_sec = 10)
+    %% PREP: do fMRI (disdac_sec = about 10)
     if dofmri
-        dat.disdaq_sec = 10;
+        dat.disdaq_sec = 10; % 18 TRs 
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
         Screen(theWindow, 'FillRect', bgcolor, window_rect);
@@ -198,21 +224,6 @@ try
         Screen(theWindow,'FillRect',bgcolor, window_rect);
         Screen('Flip', theWindow);
         waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
-    end
-    %% PREP: do biopac
-    % I guess it works on only Window OS
-    if doBiopac
-        %
-        bio_t = GetSecs;
-        %data.dat{runNbr}{trial_Number(j)}.biopac_triggertime = bio_t; %BIOPAC timestamp
-        BIOPAC_trigger(ljHandle, biopac_channel, 'on');
-        Screen(theWindow,'FillRect',bgcolor, window_rect);
-        Screen('Flip', theWindow);
-        waitsec_fromstarttime(bio_t, 2); % ADJUST THIS
-    end
-    
-    if doBiopac
-        BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
     
     %% ========================================================= %
@@ -229,10 +240,12 @@ try
         % --------------------------------------------------------- %
         DrawFormattedText(theWindow, double('+'), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
         Screen('Flip', theWindow);
-        %-------------Ready for Pathway------------------
-        main(ip,port,1,program(trial_i)); %select the program
-        WaitSecs(1);
-        main(ip,port,2); %ready to pre-start
+        if doPathway
+            %-------------Ready for Pathway------------------
+            main(ip,port,1,program(trial_i)); %select the program
+            WaitSecs(1);
+            main(ip,port,2); %ready to pre-start
+        end
         %-------------------------------------------------
         waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI);
         dat.dat{trial_i}.ITI_EndTime = GetSecs;
@@ -243,14 +256,33 @@ try
         %         2. Thermal stimulus (thermal_stim)
         % --------------------------------------------------------- %
         % black screen
-        DrawFormattedText(theWindow, double(''), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
-        Screen('Flip', theWindow);
-        tic;
-        dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
+        if doPathway
+            toc;
+            dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
+            
         dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
         dat.dat{trial_i}.heat_trigger_duration = toc;
-        waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI + 12); % From start + ITI + thermal (12 sec)
-        
+        end
+        if doWebcam
+            video = VideoWriter('yourvideo_high.mp4','MPEG-4'); %create the video object
+            open(video); %open the file for writing
+            i=1;
+            while GetSecs - trial_t >= ts.t{runNumber}{trial_i}.ITI + 12
+                dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t; % high res
+                i=i+1;
+                ima = snapshot(camObj);
+                ima = imresize(ima,0.5,'nearest');
+                writeVideo(video,ima ); %write the image to file
+                Screen('DrawTexture', theWindow,tex1,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
+                Screen('Flip', theWindow);
+            end
+            close(video)
+        else
+            DrawFormattedText(theWindow, double(''), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
+            Screen('Flip', theWindow);
+            waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI + 12); % From start + ITI + thermal (12 sec)
+        end
+                
         % --------------------------------------------------------- %
         %         3. ISI1
         % --------------------------------------------------------- %
