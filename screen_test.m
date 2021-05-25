@@ -115,7 +115,8 @@ while ~ready2
     yc(rec,:)=y;
     
     rating_type = 'semicircular';
-    draw_scale('overall_motor_semicircular');
+    %draw_scale('overall_motor_semicircular');
+    draw_scale('overall_predict_semicircular');
     Screen('DrawDots', theWindow, [x y]', 20, [255 164 0 130], [0 0], 1);  %dif color
     % if the point goes further than the semi-circle, move the point to
     % the closest point
@@ -132,7 +133,7 @@ while ~ready2
         SetMouse(x,y);
     end
     
-    draw_scale('overall_motor_semicircular');
+    %draw_scale('overall_motor_semicircular');
     theta = rad2deg(theta);
     theta= 180 - theta;
     theta = num2str(theta);

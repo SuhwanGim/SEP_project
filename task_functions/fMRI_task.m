@@ -21,25 +21,26 @@ function fMRI_task(SID, ts, sessionNumber, runNumber, ip, port, opts)
 %
 %   :: Requirements for this experiments and fucntions ::
 %       1) Latest version of PsychophysicsToolbox3
-%       2) Pathway with ATS thermode
-%       3) Imaging Acquisitions Toolboxes in MATLAB
-%       4) additional Webcam driver
-%       5) MRC video camera
+%       2) Recommeded version of Gstreamer (see help GStreamer)
+%       3) Webcam (In this exp, Logi 1080p)
+%       4) Pathway with ATS thermode
+%       5) Imaging Acquisitions Toolboxes in MATLAB
+%       6) Additional Webcam driver
 %
 %   ====================================================================%
 %   ** Usage **
 %
 %   ** In singal **
-%       - Scanner trigger 
+%       - Scanner trigger
 %       - obserber's webcam
 %   ** Out singal **
 %       - Scanner trigger to obs computer
-%       - Pathway trigger to path computer 
+%       - Pathway trigger to path computer
 %   ** Optional Input **
 %       - 'test': Lower reslutions. (1600 900 px)
 %       - 'fmri': If you run this script in sMRI . This option can
 %       receive 's' trigger from sync box.
-%       - 'obs' : sent fMRI trigger to observer task computer 
+%       - 'obs' : sent fMRI trigger to observer task computer
 %       - 'pathway':
 %       - 'webcam':
 %
@@ -71,7 +72,8 @@ global cir_center
 %global Participant; % response box
 %% SETUP: DATA and Subject INFO
 savedir = fullfile(pwd,'data');
-[fname,trial_previous] = subjectinfo_check_SEP(SID, savedir, sessionNumber,run_number, 'fMRI'); % subfunction %start_trial
+% subfunction %start_trial
+[fname,trial_previous] = subjectinfo_check_SEP(SID.ExpID, savedir, sessionNumber,run_number, 'fMRI');
 
 if exist(fname, 'file')
     % load previous dat files
@@ -99,9 +101,9 @@ if doPathway
     path_prog = load_PathProgram('MPC');
     ts.t{run_i}{trial_i}.stimlv
 end
-%% SETUP: envrioemnt for set 
+%% SETUP: envrioemnt for set
 if doSendTrigger
-    %set TCP/IP environment 
+    %set TCP/IP environment
 end
 %% SETUP: Screen size
 Screen('Clear');
@@ -140,7 +142,7 @@ anchor_y = H/2+10+scale_H;
 lb = 5*W/18;            % left bound
 rb = 13*W/18;           % right bound
 
-% For cont rating scale 
+% For cont rating scale
 lb1 = 1*W/18; %
 rb1 = 17*W/18; %
 
@@ -211,7 +213,7 @@ try
     
     %% PREP: do fMRI (disdac_sec = about 10)
     if dofmri
-        dat.disdaq_sec = 10; % 18 TRs 
+        dat.disdaq_sec = 10; % 18 TRs
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
         Screen(theWindow, 'FillRect', bgcolor, window_rect);
@@ -259,9 +261,8 @@ try
         if doPathway
             toc;
             dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
-            
-        dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
-        dat.dat{trial_i}.heat_trigger_duration = toc;
+            dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
+            dat.dat{trial_i}.heat_trigger_duration = toc;
         end
         if doWebcam
             video = VideoWriter('yourvideo_high.mp4','MPEG-4'); %create the video object
@@ -282,11 +283,11 @@ try
             Screen('Flip', theWindow);
             waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI + 12); % From start + ITI + thermal (12 sec)
         end
-                
+        
         % --------------------------------------------------------- %
         %         3. ISI1
         % --------------------------------------------------------- %
-        ttp = []; % total 
+        ttp = []; % total
         ttp = ts.t{runNumber}{trial_i}.ITI + 12 + ts.t{runNumber}{trial_i}.ISI1;
         fixPoint(trial_t, ttp , white, '+') % ITI
         dat.dat{trial_i}.ISI1_EndTime=GetSecs;
@@ -303,7 +304,7 @@ try
         dat.dat{trial_i}.ratings1_con_xy = temp_ratings.con_xy;
         dat.dat{trial_i}.ratings1_con_clicks = temp_ratings.con_clicks;
         dat.dat{trial_i}.ratings1_con_r_theta = temp_ratings.con_r_theta;
-                
+        
         
         % --------------------------------------------------------- %
         %         5. ISI2
@@ -327,8 +328,8 @@ try
         dat.dat{trial_i}.ratings2_con_r_theta = temp_ratings.con_r_theta;
         
         % ------------------------------------ %
-        %  End of trial (save data) 
-        % ------------------------------------ %        
+        %  End of trial (save data)
+        % ------------------------------------ %
         dat.dat{trial_i}.TrialEndTimestamp=GetSecs;
         if mod(trial_i,2)
             save(dat.datafile, '-append', 'dat');
@@ -336,7 +337,7 @@ try
     end
     
     %% FINALZING EXPERIMENT
-    dat.RunEndTime = GetSec;            
+    dat.RunEndTime = GetSec;
     DrawFormattedText(theWindow, double(' '), 'center', 'center', white, [], [], [], 1.2);
     Screen('Flip', theWindow);
     

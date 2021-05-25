@@ -3,6 +3,8 @@ function data=load_PathProgram(type)
 % can freely add a list based on your project.
 %
 % dec2bin(100) -> ans = 1100100
+% bin2dec('00011010') -> 26
+%
 % [MATLAB Value, PATHWAY Value] = (100,1100100)
 %%
 
@@ -65,7 +67,7 @@ switch type
             49.4 '01001101' 'SEMIC_49.4'; ...
             49.6 '01001110' 'SEMIC_49.6';};
     case 'MPC' % project name
-        % 26('00011010'; 39.2 thermal degree)~74('01001110'; 49.6 thermal degree)
+        % 26('00011010'; 39.2 thermal degree)~74('01001110'; 49.6 thermal degree)        
         data = {
             44.5 '00011010' 'MPC_39.2' 26 ; ...
             45.5 '00011011' 'MPC_39.4' 27 ; ...

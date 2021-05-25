@@ -35,7 +35,48 @@ end
 Screen('Flip', theWindow);
 
 switch type
-    case 'basic'
+    case 'SEP_basic'
+        for i = 1:3
+            msg = strcat('연구자는 열패드를 해당 위치로 이동시켜주세요 (Space):  ', num2str(i));
+            while (1)
+                [~,~,keyCode] = KbCheck;
+                if keyCode(KbName('space'))==1
+                    break;
+                elseif keyCode(KbName('q'))==1
+                    abort_experiment;
+                end
+                display_expmessage(msg);
+            end
+            msg='잠시만 기다려 주세요';
+            display_expmessage(msg);
+            
+            if ~isempty(msg)
+                disp('Please wait a second');
+                main(ip, port, 1, 76); % Highest temp 49.2
+                WaitSecs(0.5);
+                clc;
+                
+                disp('Ready to start');
+                main(ip, port, 2);
+                WaitSecs(2);
+                clc;
+                
+                disp('Start');
+                main(ip, port, 2);
+                
+                sTime=GetSecs;         %      
+                msg='';
+                display_expmessage(msg);
+                
+                disp('Done');
+            end
+            while GetSecs - sTime <13 
+                % pause
+            end
+        end
+        msg=double('이제부터는 응답 도구 연습을 시작하겠습니다 (space)');
+        
+    case 'basic' % created for SEMIC
         for i = 1:4
             msg = strcat('연구자는 열패드를 해당 위치로 이동시켜주세요 (Space):  ', num2str(i));
             while (1)
@@ -52,7 +93,7 @@ switch type
             
             if ~isempty(msg)
                 %disp('Please wait a second');
-                main(ip, port, 1, 76);
+                main(ip, port, 1, 76); % for SEP ; 76 for SEMIC
                 WaitSecs(0.5);
                 clc;
                 
