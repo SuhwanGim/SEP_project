@@ -33,6 +33,7 @@ yellow = [255 220 0];
 theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect);       % start the screen
 Screen('Preference','TextEncodingLocale','ko_KR.UTF-8');                  % text encoding
 Screen('BlendFunction', theWindow, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); % For using transparent color e.g., alpha value of [R G B alpha]
+Screen('Preference','TextRenderer',1)
 Screen('TextSize', theWindow, fontsize);
 font = 'NanumBarunGothic';
 Screen('TextFont', theWindow, font); % setting font
@@ -42,7 +43,7 @@ secs = 12;
 i = 1;
 % Create video 
 %video = VideoWriter('yourvideo_high.avi','Uncompressed AVI'); %create the video object
-video = VideoWriter('yourvideo_high.avi'); %create the video object
+video = VideoWriter('yourvideo_high.mp4','MPEG-4'); %create the video object
 open(video); %open the file for writing
 t2 = [];
 t = GetSecs;
@@ -52,7 +53,7 @@ while GetSecs - t < secs
     t2(i) = GetSecs-t; % high res
     i=i+1;
     ima = snapshot(camObj);
-    %ima = imresize(ima,0.5,'nearest');    
+    ima = imresize(ima,0.5,'nearest');    
     writeVideo(video,ima ); %write the image to file    
     
     
@@ -61,7 +62,7 @@ while GetSecs - t < secs
     
     % Draw quiz
     %DrawFormattedText(theWindow, num2str(double(GetSecs - t)), 'center', 'center', white, [], [], [], 1.2); % null screen
-    DrawFormattedText2([double('<size=40><font=-:lang=ko><color=ff0000>') double('김수환환환')],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
+    %DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ff0000>',round(GetSecs-t))) double('김수환환환')],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
     %DrawFormattedText(theWindow, double('김수환'), 'center', 'center', white, [], [], [], 1.2); % null screen
     Screen('Flip', theWindow);
     
