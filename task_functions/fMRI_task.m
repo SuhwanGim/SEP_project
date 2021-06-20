@@ -98,7 +98,7 @@ if doWebcam
 end
 %% SETUP: Load pathway program
 if doPathway
-    path_prog = load_PathProgram('MPC');
+    path_prog = load_PathProgram('MPC'); % 
     ts.t{run_i}{trial_i}.stimlv
 end
 %% SETUP: envrioemnt for set
@@ -232,8 +232,8 @@ try
     %                   TRIAL START
     % ========================================================== %
     dat.RunStartTime = GetSecs;
-    for trial_i = start_trial:16 % length(ts.t{1})
-        
+    for trial_i = start_trial:16 % length(ts.t{1})        
+            
         % Trial begins
         trial_t = GetSecs;
         dat.dat{trial_i}.TrialStartTimestamp = trial_t;
@@ -265,15 +265,16 @@ try
             dat.dat{trial_i}.heat_trigger_duration = toc;
         end
         if doWebcam
-            video = VideoWriter('yourvideo_high.mp4','MPEG-4'); %create the video object
-            open(video); %open the file for writing
-            i=1;
+            vidnames = sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID, runNumber, trial_i); %  R00_T00_thermal_stim.mp4 
+            video = VideoWriter(vidnames ,'MPEG-4'); %create the video object
+            open(video); % open the file for writing
+            i=1;         % timestamp for video 
             while GetSecs - trial_t >= ts.t{runNumber}{trial_i}.ITI + 12
-                dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t; % high res
+                dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t; % high res 
                 i=i+1;
                 ima = snapshot(camObj);
-                ima = imresize(ima,0.5,'nearest');
-                writeVideo(video,ima ); %write the image to file
+                ima = imresize(ima,0.5,'nearest');                % for low resolution?
+                writeVideo(video,ima); %write the image to file
                 Screen('DrawTexture', theWindow,tex1,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
                 Screen('Flip', theWindow);
             end
