@@ -26,30 +26,32 @@ opts.Pathway = 0;     % do using pathway
 IDs.ExpID = '';           % ID for fMRI scanner participants
 IDs.ObsID = '';           % ID for observer participants
 %% generate ts
-ts = generate_ts_SEP('fMRI'); % generate trial sequences 
+% This ts will be genereated before fMRI sessiosn for both estimating task and pain task. 
+% ts = generate_ts_SEP('fMRI'); 
 %% START 
 runnumber = 1;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %%
 runnumber = 2;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %%  
 runnumber = 3;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %% 
 runnumber = 4;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %% 
 runnumber = 5;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %% 
 runnumber = 6;
-fMRI_task(IDs, ts, runNumber, IPs, opts)
+fMRI_task(IDs, ts, runnumber, IPs, opts)
 
 %% Movie runs 
-movie_task(IDs, movie_name, opts)
+movie_number=1;
+movie_task(IDs, movie_number, opts)

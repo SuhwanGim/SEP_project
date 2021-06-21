@@ -211,7 +211,7 @@ try
     end
     
     
-    %% PREP: do fMRI (disdac_sec = about 10)
+    %% PREP: do fMRI (disdaq_sec = about 10)
     if dofmri
         dat.disdaq_sec = 10; % 18 TRs
         fmri_t = GetSecs;
@@ -248,6 +248,11 @@ try
             WaitSecs(1);
             main(ip,port,2); %ready to pre-start
         end
+        if doWebcam
+            vidnames = sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID, runNumber, trial_i); %  R00_T00_thermal_stim.mp4 
+            video = VideoWriter(vidnames ,'MPEG-4'); %create the video object
+            open(video); % open the file for writing
+        end
         %-------------------------------------------------
         waitsec_fromstarttime(trial_t, ts.t{runNumber}{trial_i}.ITI);
         dat.dat{trial_i}.ITI_EndTime = GetSecs;
@@ -258,24 +263,27 @@ try
         %         2. Thermal stimulus (thermal_stim)
         % --------------------------------------------------------- %
         % black screen
+        
         if doPathway
             toc;
             dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
             dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
             dat.dat{trial_i}.heat_trigger_duration = toc;
         end
-        if doWebcam
-            vidnames = sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID, runNumber, trial_i); %  R00_T00_thermal_stim.mp4 
-            video = VideoWriter(vidnames ,'MPEG-4'); %create the video object
-            open(video); % open the file for writing
+        if doWebcam            
             i=1;         % timestamp for video 
             while GetSecs - trial_t >= ts.t{runNumber}{trial_i}.ITI + 12
                 dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t; % high res 
                 i=i+1;
                 ima = snapshot(camObj);
                 ima = imresize(ima,0.5,'nearest');                % for low resolution?
-                writeVideo(video,ima); %write the image to file
-                Screen('DrawTexture', theWindow,tex1,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
+                
+                %write the image to file
+                writeVideo(video,ima); 
+                
+                %show webcam images on Screen
+                tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
+                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
                 Screen('Flip', theWindow);
             end
             close(video)
