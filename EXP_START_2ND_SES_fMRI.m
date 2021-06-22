@@ -4,8 +4,8 @@ addpath(genpath(pwd));
 cd(pwd);
 %% SETTINGS: IP
 IPs = []; 
-IPs.IP_path = ''; % Pathway
-IPs.port_path = '';
+IPs.IP_path = '192.168.0.2'; % Pathway
+IPs.port_path = 20121;
 
 IPs.IP_obs = ''; % Out-PC
 IPs.port_obs = '';
@@ -20,14 +20,17 @@ opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
 opts.fMRI = 0;        % do fMRI (get fMRI signal)
 opts.obs = 0;         % do sending trigger to observer's computer 
-opts.doFace = 0;      % do webcam mode
-opts.Pathway = 0;     % do using pathway 
+opts.doFace = 1;      % do webcam mode
+opts.Pathway = 1;     % do using pathway 
 %% SETTINGS: IDs
-IDs.ExpID = '';           % ID for fMRI scanner participants
-IDs.ObsID = '';           % ID for observer participants
+% should be different
+IDs.ExpID = 'TEST_SUHWAN';           % ID for fMRI scanner participants
+IDs.ObsID = 'TEST_SUHWAN2';           % ID for observer participants
 %% generate ts
 % This ts will be genereated before fMRI sessiosn for both estimating task and pain task. 
 % ts = generate_ts_SEP('fMRI'); 
+%% START WITH RESTING-state 
+
 %% START 
 runnumber = 1;
 fMRI_task(IDs, ts, runnumber, IPs, opts)

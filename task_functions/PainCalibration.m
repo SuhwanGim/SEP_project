@@ -29,7 +29,7 @@ global fontsize anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_y
 global reg; % regression data
 %% SETUP: DATA and Subject INFO
 savedir = fullfile(pwd,'data');
-[fname, start_trial , SID] = subjectinfo_check_SEP(SID, savedir,1,'Cali'); % subfunction %start_trial
+[fname, start_trial] = subjectinfo_check_SEP(SID, savedir,1,1,'Calibration'); % subfunction %start_trial
 % save data using the canlab_dataset object
 reg.version = 'SEP_Calibration_v1_25-05-2021_Cocoanlab';
 reg.subject = SID;
@@ -41,7 +41,7 @@ Screen('Clear');
 Screen('CloseAll');
 window_num = 0;
 if testmode
-    window_rect = [1 1 800 640]; % in the test mode, use a little smaller screen
+    window_rect = [1 1 1280 720]; % in the test mode, use a little smaller screen
     fontsize = 20;
 else
     screens = Screen('Screens');
@@ -140,7 +140,7 @@ end
 theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect); % start the screen
 Screen('BlendFunction', theWindow, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); % For alpha value of e.g.,[R G B alpha]
 Screen('Preference','TextEncodingLocale','ko_KR.UTF-8');
-Screen('TextFont', theWindow, font); % setting font
+%Screen('TextFont', theWindow, font); % setting font
 Screen('TextSize', theWindow, fontsize);
 %% START: Experiment
 try
@@ -151,7 +151,8 @@ try
         
         % 2. Moving dot part        
         % -1.1. Fixation point
-        fixPoint(2, white, stimText);
+        
+        fixPoint(GetSecs, 2, white, stimText);
         % -1.2. Moving dot part
         ready = 0;
                
@@ -188,7 +189,7 @@ try
                     break;
                 end
             end
-            fixPoint(0, white, '');
+            fixPoint(GetSecs,0, white, '');
             Screen('Flip', theWindow);
         end        
     end    

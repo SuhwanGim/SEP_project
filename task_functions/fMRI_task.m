@@ -82,7 +82,7 @@ if exist(fname, 'file')
 else
     % generate and save data
     dat.ver= 'SEP_V001_May-13-2021_Suhwan';
-    dat.subject = SID;     % subject name
+    dat.subjects = SID;     % subject name
     dat.datafile = fname;  % filename
     dat.starttime = datestr(clock, 0); % date-time
     dat.starttime_getsecs = GetSecs; % in the same format of timestamps for each trial
@@ -99,7 +99,7 @@ end
 %% SETUP: Load pathway program
 if doPathway
     path_prog = load_PathProgram('MPC'); % 
-    ts.t{run_i}{trial_i}.stimlv
+    %ts.t{run_i}{trial_i}.stimlv
 end
 %% SETUP: envrioemnt for set
 if doSendTrigger
