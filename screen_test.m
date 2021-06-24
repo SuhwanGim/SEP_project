@@ -109,6 +109,7 @@ sTime = GetSecs;
 ready2=0;
 rec=0;
 while ~ready2
+    display_expmessage('실험자는 모든 것이 잘 준비되었는지 체크해주세요 (Biopac,trigger, USB, etc). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     rec=rec+1;
     [x,y,button] = GetMouse(theWindow);
     xc(rec,:)=x; 

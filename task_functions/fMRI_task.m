@@ -174,8 +174,8 @@ red_Alpha = [255 164 0 130]; % RGB + A(Level of tranceprency)
 orange = [255 164 0];
 yellow = [255 220 0];
 %% SETUP: Screen parameters
-%font = 'NanumBarunGothic';
-font = 'D2Coding';
+font = 'NanumBarunGothic';
+%font = 'D2Coding';
 stimText = '+';
 rating_type = 'semicircular';
 %% START: Screen
@@ -230,8 +230,9 @@ try
         dat.disdaq_sec = 10; % 18 TRs
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
-        Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
+        %Screen(theWindow, 'FillRect', bgcolor, window_rect);
+        %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
+        display_expmessage('시작합니다...');
         Screen('Flip', theWindow);
         dat.runscan_starttime = GetSecs;
         waitsec_fromstarttime(fmri_t, 4);
@@ -373,14 +374,9 @@ try
     waitsec_fromstarttime(dat.RunEndTime, 10);
     save(dat.datafile, '-append', 'dat');
     waitsec_fromstarttime(GetSecs, 2);
-    %% END MESSAGE
-    if runNumber == 6
-        str = '실험이 종료되었습니다.\n 잠시만 기다려주세요 (space)';
-    else
-        str = '잠시만 기다려주세요 (space)';
-    end
-    display_expmessage(str);
-    
+    %% END MESSAGE    
+    str = '잠시만 기다려주세요 (space)';    
+    display_expmessage(str);    
     while (1)
         [~,~,keyCode] = KbCheck;
         if keyCode(KbName('q'))==1
@@ -388,15 +384,12 @@ try
         elseif keyCode(KbName('space'))== 1
             break
         end
-    end
-    
-    
+    end        
     ShowCursor();
-    Screen('Clear');
-    
+    Screen('Clear');    
     Screen('CloseAll');
 catch err
-    % ERROR
+    % print ERROR   
     disp(err);
     ShowCursor();
     for i = 1:numel(err.stack)
@@ -422,10 +415,11 @@ if dofmri
 else
     Run_start_text = double('참가자가 준비되었으면, r을 눌러주세요.');
 end
-
+msg = Run_start_text;
 % display
-Screen(theWindow,'FillRect',bgcolor, window_rect);
-DrawFormattedText(theWindow, Run_start_text, 'center', 'center', white, [], [], [], 1.5);
+%Screen(theWindow,'FillRect',bgcolor, window_rect);
+%DrawFormattedText(theWindow, Run_start_text, 'center', 'center', white, [], [], [], 1.5);
+DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
 Screen('Flip', theWindow);
 
 end
@@ -479,7 +473,8 @@ while GetSecs - start_t < total_secs
     end
     
     msg = double(msg);
-    DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
+    %DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
+    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
     draw_scale('overall_predict_semicircular');
     Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
     Screen('Flip', theWindow);
