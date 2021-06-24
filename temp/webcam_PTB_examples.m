@@ -1,7 +1,9 @@
-%% Construct a webcam object
-camObj = webcam; % The resoultion of webcam can be modified in WinOS
+
+% Construct a webcam object
+%close(camObj);
+camObj = webcam(2); % The resoultion of webcam can be modified in WinOS
 % Preview a stream of image frames.
-preview(camObj);
+%preview(camObj);
 
 % Acquire and display a single image frame.
 
@@ -53,7 +55,7 @@ while GetSecs - t < secs
     t2(i) = GetSecs-t; % high res
     i=i+1;
     ima = snapshot(camObj);
-    ima = imresize(ima,0.5,'nearest');    
+    % ima = imresize(ima,0.5,'nearest');    
     writeVideo(video,ima ); %write the image to file    
     
     

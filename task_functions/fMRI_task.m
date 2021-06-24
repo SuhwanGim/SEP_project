@@ -1,4 +1,4 @@
-function fMRI_task(SID, ts, sessionNumber, runNumber, ip, port, opts)
+function fMRI_task(SID, ts, sessionNumber, runNumber, ips, opts)
 %
 %  :: WORKING ON::
 %       : Suhwan Gim (suhwan.gim.psych@gmail.com)
@@ -46,11 +46,9 @@ function fMRI_task(SID, ts, sessionNumber, runNumber, ip, port, opts)
 %
 %   ====================================================================
 %% SETUP: Check OPTIONS
-if (~isfield(opts,'dofmri')) | (~isfield(opts,'doBiopac'))  | (~isfield(opts,'testmode'))
-    if ismissing(opts.dofmri)
-        error('Check options');
-    end
-end
+% if (~isfield(opts,'dofmri')) | (~isfield(opts,'doBiopac'))  | (~isfield(opts,'testmode')) 
+%     error('Check options');
+% end
 %% SETUP: OPTIONS
 testmode = opts.testmode;
 dofmri = opts.dofmri;
@@ -59,7 +57,12 @@ doWebcam = opts.doFace;
 doPathway = opts.Pathway;
 doSendTrigger = opts.obs;
 start_trial = 1;
-
+% for pathway
+ip = ips.pathway_IP;
+port = ips.pathway_port;
+% for oberver PC
+obs_ip = ips.obs_IP;
+obs_port = ips.obs_port;
 %iscomp = 3; % default: macbook keyboard
 %% SETUP: GLOBAL variables
 global theWindow W H window_num;                  % window screen property
@@ -73,8 +76,10 @@ global cir_center
 %% SETUP: DATA and Subject INFO
 savedir = fullfile(pwd,'data');
 % subfunction %start_trial
-[fname,trial_previous] = subjectinfo_check_SEP(SID.ExpID, savedir, sessionNumber,run_number, 'fMRI');
+[fname,trial_previous] = subjectinfo_check_SEP(SID.ExpID, savedir, sessionNumber,runNumber, 'fMRI');
 
+% Load calibration 
+load(fullfile(savedir, 'PainCali_data',sprintf('SEP_PainCali_data_Sub-%s_session01_run01.mat',SID.ExpID)),'reg');
 if exist(fname, 'file')
     % load previous dat files
     load(fname);
@@ -93,14 +98,22 @@ else
 end
 %% SETUP: Webcam
 if doWebcam
-    camObj = webcam; % The resoultion of webcam can be modified in WinOS
+    CAMLIST = webcamlist;    
+    camObj = webcam(find(contains(CAMLIST,'HD'))); % The resoultion of webcam can be modified in WinOS    
     %camObj.Resolution = {''};
 end
 %% SETUP: Load pathway program
-if doPathway
-    path_prog = load_PathProgram('MPC'); % 
-    %ts.t{run_i}{trial_i}.stimlv
+path_prog = load_PathProgram('MPC');
+for i = 1:numel(reg.FinalLMH_5Level)
+    for ii = 1:length(path_prog)
+        if reg.FinalLMH_5Level(i) == path_prog{ii,1}
+            degree{i,1} = bin2dec(path_prog{ii,2});
+        else
+            %do nothing
+        end
+    end
 end
+stim_degree=cell2mat(degree);
 %% SETUP: envrioemnt for set
 if doSendTrigger
     %set TCP/IP environment
@@ -161,7 +174,8 @@ red_Alpha = [255 164 0 130]; % RGB + A(Level of tranceprency)
 orange = [255 164 0];
 yellow = [255 220 0];
 %% SETUP: Screen parameters
-font = 'NanumBarunGothic';
+%font = 'NanumBarunGothic';
+font = 'D2Coding';
 stimText = '+';
 rating_type = 'semicircular';
 %% START: Screen
@@ -227,7 +241,8 @@ try
         Screen('Flip', theWindow);
         waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
     end
-    
+    %% 
+    % waitsec_fromstarttime(GetSecs, 8);
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
@@ -244,12 +259,13 @@ try
         Screen('Flip', theWindow);
         if doPathway
             %-------------Ready for Pathway------------------
-            main(ip,port,1,program(trial_i)); %select the program
+            main(ip,port,1,stim_degree(ts.t{runNumber}{trial_i}.stimlv+1)); %select the program
             WaitSecs(1);
             main(ip,port,2); %ready to pre-start
         end
+        
         if doWebcam
-            vidnames = sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID, runNumber, trial_i); %  R00_T00_thermal_stim.mp4 
+            vidnames = fullfile(savedir,'fMRI_data',sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID.ObsID, runNumber, trial_i)); %  R00_T00_thermal_stim.mp4 
             video = VideoWriter(vidnames ,'MPEG-4'); %create the video object
             open(video); % open the file for writing
         end
@@ -263,23 +279,27 @@ try
         %         2. Thermal stimulus (thermal_stim)
         % --------------------------------------------------------- %
         % black screen
-        
+        Screen('Flip',theWindow); % black screen 
         if doPathway
             toc;
             dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
             dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
             dat.dat{trial_i}.heat_trigger_duration = toc;
         end
-        if doWebcam            
-            i=1;         % timestamp for video 
-            while GetSecs - trial_t >= ts.t{runNumber}{trial_i}.ITI + 12
-                dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t; % high res 
+        if doWebcam
+            i=1;         % timestamp for video
+            t = GetSecs;
+            while true
+                if (GetSecs - trial_t) >= (ts.t{runNumber}{trial_i}.ITI + 12)
+                    break;
+                end
+                dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t;
                 i=i+1;
                 ima = snapshot(camObj);
-                ima = imresize(ima,0.5,'nearest');                % for low resolution?
+                %ima = imresize(ima,0.5,'nearest');                % for low resolution?
                 
                 %write the image to file
-                writeVideo(video,ima); 
+                writeVideo(video,ima);
                 
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
@@ -308,8 +328,8 @@ try
         temp_ratings = [];
         temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating1, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
         
-        dat.dat{trial_i}.ratings1_end_timestamp = GetSec;
-        dat.dat{trial_i}.ratings1_con_time_fromstart = temp_ratings.con_time_fromstrat;
+        dat.dat{trial_i}.ratings1_end_timestamp = GetSecs;
+        dat.dat{trial_i}.ratings1_con_time_fromstart = temp_ratings.con_time_fromstart;
         dat.dat{trial_i}.ratings1_con_xy = temp_ratings.con_xy;
         dat.dat{trial_i}.ratings1_con_clicks = temp_ratings.con_clicks;
         dat.dat{trial_i}.ratings1_con_r_theta = temp_ratings.con_r_theta;
@@ -330,8 +350,8 @@ try
         temp_ratings = [];
         temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating2, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
         
-        dat.dat{trial_i}.ratings2_end_timestamp = GetSec;
-        dat.dat{trial_i}.ratings2_con_time_fromstart = temp_ratings.con_time_fromstrat;
+        dat.dat{trial_i}.ratings2_end_timestamp = GetSecs;
+        dat.dat{trial_i}.ratings2_con_time_fromstart = temp_ratings.con_time_fromstart;
         dat.dat{trial_i}.ratings2_con_xy = temp_ratings.con_xy;
         dat.dat{trial_i}.ratings2_con_clicks = temp_ratings.con_clicks;
         dat.dat{trial_i}.ratings2_con_r_theta = temp_ratings.con_r_theta;
@@ -346,7 +366,7 @@ try
     end
     
     %% FINALZING EXPERIMENT
-    dat.RunEndTime = GetSec;
+    dat.RunEndTime = GetSecs;
     DrawFormattedText(theWindow, double(' '), 'center', 'center', white, [], [], [], 1.2);
     Screen('Flip', theWindow);
     
@@ -354,7 +374,7 @@ try
     save(dat.datafile, '-append', 'dat');
     waitsec_fromstarttime(GetSecs, 2);
     %% END MESSAGE
-    if runNumber == 5
+    if runNumber == 6
         str = '실험이 종료되었습니다.\n 잠시만 기다려주세요 (space)';
     else
         str = '잠시만 기다려주세요 (space)';
@@ -423,21 +443,23 @@ global window_rect lb rb tb bb scale_H            % scale size parameter
 global lb1 rb1 lb2 rb2;
 global cir_center
 %%
-if contains(rating_type, 'intensity')
+if contains(rating_type, 'Intensity')
     msg = '이번 자극이 얼마나 아팠나요?';
-elseif contains(rating_type, 'unpleasantness')
+elseif contains(rating_type, 'Unpleasantness')
     msg = '이번 자극이 얼마나 불쾌했나요?';
 end
 
 
 rec_i = 0;
 start_while = GetSecs;
+radius = (rb2-lb2)/2; % radius
+SetMouse(cir_center(1),cir_center(2));
 while GetSecs - start_t < total_secs
     [x,y,button]=GetMouse(theWindow);
     rec_i= rec_i+1;
     % if the point goes further than the semi-circle, move the point to
     % the closest point
-    radius = (rb1-lb1)/2; % radius
+    
     theta = atan2(cir_center(2)-y,x-cir_center(1));
     % current euclidean distance
     curr_r = sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2);
