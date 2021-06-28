@@ -80,6 +80,9 @@ if doBIOPAC
 end
 %% SETUP: frame grabbber
 if doMRCam
+    global vid frame frame_idx
+    frame_idx = 1;
+    frame = [];
     imaqreset;
     info=imaqhwinfo;
     vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' );
@@ -170,7 +173,6 @@ try
         end
         display_runmessage(dofmri); % until 5 or r; see subfunctions
     end
-    %% SETUP: biopac
     
     %% do fMRI (disdac_sec = 10)
     if dofmri
@@ -199,69 +201,146 @@ try
         waitsec_fromstarttime(bio_t, 2); % ADJUST THIS
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
+    
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
     dat.RunStartTime = GetSecs;
-    for trial_i = ((runNumber-1)*5+1):((runNumber)*5) % start_trial:30
+    for trial_i = start_trial:16 % start_trial:30
+        %% PREP: START with getting MRcam
+        if doMRCam
+            frame{frame_idx} = getsnapshot(vid);
+            frame_idx = frame_idx +1;
+        end
         
         % Start of Trial
         trial_t = GetSecs;
-        dat.dat{trial_i}.TrialStartTimestamp=trial_t;
+        dat.dat{trial_i}.TrialStartTimestamp = trial_t;
         % --------------------------------------------------------- %
         %         1. ITI (fixPoint)
         % --------------------------------------------------------- %
-        fixPoint(trial_t, ts.ITI(trial_i,1), white, '+') % ITI
+        DrawFormattedText(theWindow, double('+'), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
+        Screen('Flip', theWindow);
+        waitsec_fromstarttime_SEP(trial_t, ts.t{runNumber}{trial_i}.ITI);
         dat.dat{trial_i}.ITI_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
         %         2. Estimating pain experience with doMRcam
+        %               Continuous estimating
         % --------------------------------------------------------- %
-        %moive_files(trial_i) = fullfile(pwd,'examples1.mov');
-        movie_files = ts.mv_name{trial_i};
-        [starttime, endtime] = run_movie(movie_files);
-        dat.dat{trial_i}.Movie_dura = endtime - starttime;
-        dat.dat{trial_i}.Movie_EndTime=GetSecs;
+        i=1;
+        t=GetSecs;
+        xc = [];
+        yc = [];
+        SetMouse(cir_center(1),cir_center(2));
+        while true
+            if (GetSecs - trial_t) >= ts.t{runNumber}{trial_i}.ITI + 12);
+                break;
+            end
+            dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t;
+            i=i+1;
+            % IMAGE
+            if doMRCam
+                ima = getsnapshot(vid);
+                frame{frame_idx} = ima;
+                frame_idx = frame_idx + 1;
+                %show webcam images on Screen
+                tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
+                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
+            end
+            % Get Mouse
+            rec=rec+1;
+            [x,y,button] = GetMouse(theWindow);
+            xc(rec,:)=x;
+            yc(rec,:)=y;
+            % if the point goes further than the semi-circle, move the point to
+            % the closest point
+            
+            theta = atan2(cir_center(2)-y,x-cir_center(1));
+            % current euclidean distance
+            curr_r = sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2);
+            % current angle (0 - 180 deg)
+            curr_theta = rad2deg(-theta+pi);
+            % For control a mouse cursor:
+            % send to diameter of semi-circle
+            if y > cir_center(2) %bb
+                y = cir_center(2); %bb;
+                SetMouse(x,y);
+            end
+            % send to arc of semi-circle
+            if sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2) > radius
+                x = radius*cos(theta)+cir_center(1);
+                y = cir_center(2)-radius*sin(theta);
+                SetMouse(x,y);
+            end
+            
+            
+            % Draw Scale
+            draw_scale('overall_predict_semicircular');
+            Screen('DrawDots', theWindow, [x y]', 20, [255 164 0 130], [0 0], 1);  %dif color
+            Screen('Flip',theWindow);
+            
+            
+            %dat.dat{trial_i}.ratings1_end_timestamp = GetSecs;
+            dat.dat{trial_i}.ratings1_con_time_fromstart(rec_i,1) = GetSecs-start_while;
+            dat.dat{trial_i}.ratings1_con_xy(rec_i,1)= [x-cir_center(1) cir_center(2)-y]./radius;
+            dat.dat{trial_i}.ratings1_con_clicks(rec_i,1) = button;
+            dat.dat{trial_i}.ratings1_con_r_theta(rec_i,1) = [curr_r/radius curr_theta/180]; %radius and degree?
+        end
         
         % --------------------------------------------------------- %
-        %         3. ISI1  
+        %         3. ISI1
         % --------------------------------------------------------- %
-        ttp = ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura;
+        ttp = []; % total
+        ttp = ts.t{runNumber}{trial_i}.ITI + 12 + ts.t{runNumber}{trial_i}.ISI1;
         fixPoint(trial_t, ttp , white, '+') % ITI
         dat.dat{trial_i}.ISI1_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
         %         4. Ratings 1 (ratings)
         % --------------------------------------------------------- %
-        secs = 30;
-        [dat.dat{trial_i}.math_response_keyCode, dat.dat{trial_i}.rt, dat.dat{trial_i}.Math_StartTime, dat.dat{trial_i}.Math_EndTime] ...
-            = showMath(ts.math_img{trial_i}, ts.math_alt(trial_i,:), secs); % showMath(mathpath, secs, varargin)
-        %dat.dat{trial_i}.Math_EndTime=GetSecs;
+        ttp = ttp + 5;
+        temp_ratings = [];
+        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating1, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
+        
+        dat.dat{trial_i}.ratings1_end_timestamp = GetSecs;
+        dat.dat{trial_i}.ratings1_con_time_fromstart = temp_ratings.con_time_fromstart;
+        dat.dat{trial_i}.ratings1_con_xy = temp_ratings.con_xy;
+        dat.dat{trial_i}.ratings1_con_clicks = temp_ratings.con_clicks;
+        dat.dat{trial_i}.ratings1_con_r_theta = temp_ratings.con_r_theta;
+        
         
         % --------------------------------------------------------- %
-        %         5. ISI2 
+        %         5. ISI2
         % --------------------------------------------------------- %
-        tts = ts.ITI(trial_i,3)  + ts.ITI(trial_i,2) + ts.ITI(trial_i,1) + dat.dat{trial_i}.Movie_dura + secs ;
-        fixPoint(trial_t, tts , white, '+') % ITI
+        ttp = ttp + ts.t{runNumber}{trial_i}.ISI2;
+        fixPoint(trial_t, ttp , white, '+') % ISI2
         dat.dat{trial_i}.ISI2_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
-        %         6. Ratings 2 
+        %         6. Ratings 2
         % --------------------------------------------------------- %
         %fixPoint(trial_t, ts.ITI(trial_i,3), white, '+') % ITI
-        resting_time(10);
-        dat.dat{trial_i}.resting_EndTime=GetSecs;        
+        ttp = ttp + 5;
+        temp_ratings = [];
+        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating2, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
+        
+        dat.dat{trial_i}.ratings2_end_timestamp = GetSecs;
+        dat.dat{trial_i}.ratings2_con_time_fromstart = temp_ratings.con_time_fromstart;
+        dat.dat{trial_i}.ratings2_con_xy = temp_ratings.con_xy;
+        dat.dat{trial_i}.ratings2_con_clicks = temp_ratings.con_clicks;
+        dat.dat{trial_i}.ratings2_con_r_theta = temp_ratings.con_r_theta;
         
         % ------------------------------------ %
-        %  End of trial (save data) 5 secs
+        %  End of trial (save data)
         % ------------------------------------ %
-        
         dat.dat{trial_i}.TrialEndTimestamp=GetSecs;
-        save(dat.datafile, '-append', 'dat');
-        
+        if mod(trial_i,2)
+            save(dat.datafile, '-append', 'dat');
+        end
     end
     %% %End BIOPAC
-    if doBiopac 
+    if doBiopac
         dat.biopac_endtime = GetSecs;% biopac end timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
         waitsec_fromstarttime(bio_t, 0.5);
@@ -269,13 +348,14 @@ try
     end
     %% FINALZING EXPERIMENT
     dat.RunEndTime = GetSecs;
-    DrawFormattedText(theWindow, double(stimText), 'center', 'center', white, [], [], [], 1.2);
+    DrawFormattedText(theWindow, double('  '), 'center', 'center', white, [], [], [], 1.2);
     Screen('Flip', theWindow);
     
     waitsec_fromstarttime(dat.RunEndTime, 10);
     save(dat.datafile, '-append', 'dat');
     waitsec_fromstarttime(GetSecs, 2);
-    
+    % Remove the video input object from memory:
+    delete(vid);    
     %% END MESSAGE
     str = '잠시만 기다려주세요 (space)';
     display_expmessage(str);
@@ -287,12 +367,9 @@ try
         elseif keyCode(KbName('space'))== 1
             break
         end
-    end
-    
-    
+    end        
     ShowCursor();
-    Screen('Clear');
-    
+    Screen('Clear');    
     Screen('CloseAll');
 catch err
     % ERROR
@@ -354,17 +431,108 @@ Screen('CloseAll'); %relinquish screen control
 disp(str); %present this text in command window
 
 end
+
+function waitsec_fromstarttime_SEP(starttime, duration)
+% Using this function instead of WaitSecs()
+% function waitsec_fromstarttime(starttime, duration)
+global frame frame_idx vid
+
+while true
+    frame{frame_idx} = getsnapshot(vid);
+    frame_idx = frame_idx + 1;
+    if GetSecs - starttime >= duration
+        break;
+    end
+end
+
+end
+
 %% ------------------------------------------ %
 %           TASK                              %
 %  ------------------------------------------ %
+function temp_ratings = get_ratings2(rating_type, total_secs, start_t )
 
+global theWindow W H window_num;                  % window screen property
+global white red red_Alpha orange bgcolor yellow; % set color
+global window_rect lb rb tb bb scale_H            % scale size parameter
+global lb1 rb1 lb2 rb2;
+global cir_center
+global frame frame_idx vid
 
-
-function giveStimulus
+%%
+if contains(rating_type, 'Intensity')
+    msg = '이번 자극이 얼마나 아팠나요?';
+elseif contains(rating_type, 'Unpleasantness')
+    msg = '이번 자극이 얼마나 불쾌했나요?';
 end
 
 
-function getRatings
+rec_i = 0;
+start_while = GetSecs;
+radius = (rb2-lb2)/2; % radius
+SetMouse(cir_center(1),cir_center(2));
+while GetSecs - start_t < total_secs
+    % getting imgaes
+    frame{frame_idx} = getsnapshot(vid);
+    frame_idx = frame_idx + 1;
+    
+    [x,y,button]=GetMouse(theWindow);
+    rec_i= rec_i+1;
+    
+    % if the point goes further than the semi-circle, move the point to
+    % the closest point
+    
+    theta = atan2(cir_center(2)-y,x-cir_center(1));
+    % current euclidean distance
+    curr_r = sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2);
+    % current angle (0 - 180 deg)
+    curr_theta = rad2deg(-theta+pi);
+    % For control a mouse cursor:
+    % send to diameter of semi-circle
+    if y > cir_center(2) %bb
+        y = cir_center(2); %bb;
+        SetMouse(x,y);
+    end
+    % send to arc of semi-circle
+    if sqrt((x-cir_center(1))^2+ (y-cir_center(2))^2) > radius
+        x = radius*cos(theta)+cir_center(1);
+        y = cir_center(2)-radius*sin(theta);
+        SetMouse(x,y);
+    end
+    
+    msg = double(msg);
+    %DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
+    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
+    draw_scale('overall_predict_semicircular');
+    Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
+    Screen('Flip', theWindow);
+    
+    % recording
+    temp_ratings.con_time_fromstart(rec_i,1) = GetSecs-start_while;
+    temp_ratings.con_xy(rec_i,:) = [x-cir_center(1) cir_center(2)-y]./radius;
+    temp_ratings.con_clicks(rec_i,:) = button;
+    temp_ratings.con_r_theta(rec_i,:) = [curr_r/radius curr_theta/180]; %radius and degree?
+    
+    
+    if button(1)
+        draw_scale('overall_predict_semicircular');
+        Screen('DrawDots', theWindow, [x y]', 18, red, [0 0], 1);  % Feedback
+        Screen('Flip',theWindow);
+        WaitSecs(min(0.5, 5-(GetSecs-start_while)));
+        ready3=0;
+        while ~ready3 %GetSecs - sTime> 5
+            msg = double(' ');
+            DrawFormattedText(theWindow, msg, 'center', 150, white, [], [], [], 1.2);
+            Screen('Flip',theWindow);
+            if  GetSecs - start_while > 5
+                break
+            end
+        end
+        break;
+    else
+        %do nothing
+    end
+    
 end
 
-
+end
