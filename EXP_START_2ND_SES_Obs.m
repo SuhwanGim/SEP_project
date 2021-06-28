@@ -8,8 +8,8 @@ addpath(genpath(pwd));
 cd(pwd);
 %% SETTINGS: IP
 IPs = []; 
-IPs.IP_obs = ''; % Out-PC
-IPs.port_obs = '';
+IPs.fMRI_ip = ''; % Out-PC
+IPs.fMRI_port = '';
 %% SETTINGS: Communication test 
 % 1. Pathway test
 main();
@@ -17,9 +17,12 @@ main();
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
-opts.doFace = 0;      % do webcam mode
-opts.biopac = 0;      % do webcam mode
+opts.doFace = 0;      % do getting MR participant's face 
+opts.biopac = 0;      % do getting biocpac 
 opts.obs = 0;         % do getting trigger to observer's computer 
+opts.fmri_pc = '';
+opts.fmri_pot = '';
+
 
 %% SETTINGS: IDs
 IDs.ExpID = '';           % ID for fMRI scanner participants

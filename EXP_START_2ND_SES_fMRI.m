@@ -7,8 +7,8 @@ IPs = [];
 IPs.pathway_IP = '192.168.0.2'; % Pathway
 IPs.pathway_port = 20121;
 
-IPs.obs_IP = ''; % Out-PC
-IPs.obs_port = '';
+IPs.my_IP = '';      % Out-PC
+IPs.my_port = 30000; % observer computer PORT
 %% SETTINGS: Communication test
 main(ip,port,1,76); %select the program 
 WaitSecs(1);

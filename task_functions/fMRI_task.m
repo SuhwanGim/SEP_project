@@ -46,13 +46,12 @@ function fMRI_task(SID, ts, sessionNumber, runNumber, ips, opts)
 %
 %   ====================================================================
 %% SETUP: Check OPTIONS
-% if (~isfield(opts,'dofmri')) | (~isfield(opts,'doBiopac'))  | (~isfield(opts,'testmode')) 
+% if (~isfield(opts,'dofmri')) | (~isfield(opts,'doBiopac'))  | (~isfield(opts,'testmode'))
 %     error('Check options');
 % end
 %% SETUP: OPTIONS
 testmode = opts.testmode;
 dofmri = opts.dofmri;
-%doBiopac = opts.doBiopac;
 doWebcam = opts.doFace;
 doPathway = opts.Pathway;
 doSendTrigger = opts.obs;
@@ -60,10 +59,11 @@ start_trial = 1;
 % for pathway
 ip = ips.pathway_IP;
 port = ips.pathway_port;
-% for oberver PC
-obs_ip = ips.obs_IP;
-obs_port = ips.obs_port;
-%iscomp = 3; % default: macbook keyboard
+% for MY PC ip and port
+% it is for sending trigger packet
+my_ip = ips.my_IP;
+my_port = ips.my_port;
+
 %% SETUP: GLOBAL variables
 global theWindow W H window_num;                  % window screen property
 global white red red_Alpha orange bgcolor yellow; % set color
@@ -78,7 +78,7 @@ savedir = fullfile(pwd,'data');
 % subfunction %start_trial
 [fname,trial_previous] = subjectinfo_check_SEP(SID.ExpID, savedir, sessionNumber,runNumber, 'fMRI');
 
-% Load calibration 
+% Load calibration
 load(fullfile(savedir, 'PainCali_data',sprintf('SEP_PainCali_data_Sub-%s_session01_run01.mat',SID.ExpID)),'reg');
 if exist(fname, 'file')
     % load previous dat files
@@ -98,8 +98,8 @@ else
 end
 %% SETUP: Webcam
 if doWebcam
-    CAMLIST = webcamlist;    
-    camObj = webcam(find(contains(CAMLIST,'HD'))); % The resoultion of webcam can be modified in WinOS    
+    CAMLIST = webcamlist;
+    camObj = webcam(find(contains(CAMLIST,'HD'))); % The resoultion of webcam can be modified in WinOS
     %camObj.Resolution = {''};
 end
 %% SETUP: Load pathway program
@@ -116,7 +116,12 @@ end
 stim_degree=cell2mat(degree);
 %% SETUP: envrioemnt for set
 if doSendTrigger
-    %set TCP/IP environment
+    %set TCP/IP environment    
+    trg_dat = 100;
+    trg_dat = im2double(trg_dat);
+    s = whos('data');
+    tcpipServer = tcpip(my_ip, my_port, 'NetworkRole','server');
+    set(tcpipServer, 'OutputBufferSize',s.bytes);
 end
 %% SETUP: Screen size
 Screen('Clear');
@@ -208,7 +213,6 @@ try
             elseif keyCode(KbName('q'))==1
                 abort_experiment;
             end
-            
         else % for behavior
             [~,~,keyCode] = KbCheck;
             if keyCode(KbName('r'))==1
@@ -217,23 +221,32 @@ try
                 abort_experiment;
             end
         end
-        
-        if doSendTrigger
-            % send trigger to observation's computers
-        end
         display_runmessage(dofmri); % until 5 or r; see subfunctions
     end
     
     
     %% PREP: do fMRI (disdaq_sec = about 10)
     if dofmri
-        dat.disdaq_sec = 10; % 18 TRs
+        dat.disdaq_sec = 10 + 8 ; % 18 TRs
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
         %Screen(theWindow, 'FillRect', bgcolor, window_rect);
         %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
         display_expmessage('시작합니다...');
         Screen('Flip', theWindow);
+    end
+    
+    %% PREP : send trigger to the observation computer
+    if doSendTrigger
+        dat.sendTriggerStart_timestamp = GetSecs;
+        fopen(tcpipServer);
+        fwrite(tcpipServer, trg_dat(:), 'double'); % send data
+        fclose(tcpipServer);
+        dat.sendTriggerEnd_timestamp = GetSecs;
+    end
+    
+    %% PREP: Wait 4 and 14 secs more 
+    if dofmri
         dat.runscan_starttime = GetSecs;
         waitsec_fromstarttime(fmri_t, 4);
         

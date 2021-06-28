@@ -11,8 +11,10 @@ cd(pwd);
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
+
 %% SETTINGS: IDs
-IDs = '';           % ID for fMRI scanner participants
+IDs.ExpID = '';           % ID for fMRI scanner participants
+IDs.ObsID = '';           % ID for observer participants
 %% SETTINGS: 
 moive_idx= 99999;
 %% START 
