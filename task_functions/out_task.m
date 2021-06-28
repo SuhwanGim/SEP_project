@@ -301,7 +301,7 @@ try
         % --------------------------------------------------------- %
         ttp = ttp + 5;
         temp_ratings = [];
-        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating1, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
+        temp_ratings = get_ratings2(ts.t{runNumber}{trial_i}.rating1, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
         
         dat.dat{trial_i}.ratings1_end_timestamp = GetSecs;
         dat.dat{trial_i}.ratings1_con_time_fromstart = temp_ratings.con_time_fromstart;
@@ -323,7 +323,7 @@ try
         %fixPoint(trial_t, ts.ITI(trial_i,3), white, '+') % ITI
         ttp = ttp + 5;
         temp_ratings = [];
-        temp_ratings = get_ratings(ts.t{runNumber}{trial_i}.rating2, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
+        temp_ratings = get_ratings2(ts.t{runNumber}{trial_i}.rating2, ttp, trial_t); % get_ratings(rating_type, total_secs, start_t )
         
         dat.dat{trial_i}.ratings2_end_timestamp = GetSecs;
         dat.dat{trial_i}.ratings2_con_time_fromstart = temp_ratings.con_time_fromstart;
@@ -337,25 +337,29 @@ try
         dat.dat{trial_i}.TrialEndTimestamp=GetSecs;
         if mod(trial_i,2)
             save(dat.datafile, '-append', 'dat');
-        end
-    end
-    %% %End BIOPAC
+        end        
+    end    
+    %% FINALZING EXPERIMENT
+    dat.RunEndTime = GetSecs;
+    DrawFormattedText(theWindow, double('  '), 'center', 'center', white, [], [], [], 1.2);
+    Screen('Flip', theWindow);
+    % End BIOPAC
     if doBiopac
         dat.biopac_endtime = GetSecs;% biopac end timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
         waitsec_fromstarttime(bio_t, 0.5);
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
-    %% FINALZING EXPERIMENT
-    dat.RunEndTime = GetSecs;
-    DrawFormattedText(theWindow, double('  '), 'center', 'center', white, [], [], [], 1.2);
-    Screen('Flip', theWindow);
-    
-    waitsec_fromstarttime(dat.RunEndTime, 10);
+    if doMRCam
+        dat.frame_grabber = frame;    
+        frame = []; 
+        frame_idx = 1; 
+        % Remove the video input object from memory:
+        delete(vid);
+    end
+    waitsec_fromstarttime(dat.RunEndTime, 2);
     save(dat.datafile, '-append', 'dat');
-    waitsec_fromstarttime(GetSecs, 2);
-    % Remove the video input object from memory:
-    delete(vid);    
+    waitsec_fromstarttime(GetSecs, 10);    
     %% END MESSAGE
     str = '잠시만 기다려주세요 (space)';
     display_expmessage(str);
