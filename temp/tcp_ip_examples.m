@@ -4,9 +4,11 @@ camList = webcamlist;
 % Connect to the webcam.
 cam = webcam(1);
 %%
-ipad ='localhost';
+ipad ='0.0.0.0';
 %% SEVRVER
 data = snapshot(cam);
+%
+data =100;
 data=im2double(data);
 s = whos('data');
 s.size;

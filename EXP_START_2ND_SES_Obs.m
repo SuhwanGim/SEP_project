@@ -16,22 +16,25 @@ main();
 % 2. Trigger test  
 %% SETTINGS: Options
 opts = [];
-opts.testmode = 1;    % do test mode (not full screens)
-opts.doFace = 0;      % do getting MR participant's face 
+opts.testmode = 0;    % do test mode (not full screens)
+opts.doFace = 1;      % do getting MR participant's face 
 opts.biopac = 0;      % do getting biocpac 
 opts.obs = 0;         % do getting trigger to observer's computer 
 opts.fmri_pc = '';
 opts.fmri_pot = '';
+opts.dofmri = 0;
 
 
 %% SETTINGS: IDs
-IDs.ExpID = '';           % ID for fMRI scanner participants
-IDs.ObsID = '';           % ID for observer participants
+SID.ExpID = 'TEST_____';           % ID for fMRI scanner participants
+SID.ObsID = 'TEST_SUHWAN2222';           % ID for observer participants
 %% generate ts
-ts = generate_ts_SEP('obser'); % generate trial sequences 
+ts = generate_ts_SEP('fMRI'); % generate trial sequences 
 %% START 
-% runnumber = 1;
-% out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 1;
+sessionNumber = 1;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
+%out_task(IDs, ts, runNumber, IPs, opts)
 
 %%
 runnumber = 2;

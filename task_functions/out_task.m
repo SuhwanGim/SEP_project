@@ -39,7 +39,7 @@ testmode = opts.testmode;
 dofmri = opts.dofmri;
 doMRCam = opts.doFace;
 doGetTrigger = opts.obs;
-doBiopac = opts.biopac;
+doBIOPAC = opts.biopac;
 % for MY PC ip and port
 % it is for sending trigger packet
 fmri_ip = ips.fMRI_ip;
@@ -51,10 +51,14 @@ global theWindow W H window_num;                  % window screen property
 global white red red_Alpha orange bgcolor yellow; % set color
 global window_rect lb rb tb bb scale_H            % scale size parameter
 global fontsize;                                  % fontsize
+global cir_center
+global lb1 rb1 lb2 rb2;
+global anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
+
 %global Participant; % response box
 %% SETUP: DATA and Subject INFO
 savedir = fullfile(pwd, 'data');
-[fname,trial_previous, ~] = subjectinfo_check_SEP(SID.ObsID,savedir, sessionNumber,runNumber,'Obs'); % subfunction %start_trial
+[fname,trial_previous] = subjectinfo_check_SEP(SID.ObsID,savedir, sessionNumber,runNumber,'Obs'); % subfunction %start_trial
 
 if exist(fname, 'file')
     % load previous dat files
@@ -67,7 +71,7 @@ else
     dat.datafile = fname; % filename
     dat.starttime = datestr(clock, 0); % date-time
     dat.starttime_getsecs = GetSecs; % in the same format of timestamps for each trial
-    dat.session_number = sessionNumbber;
+    dat.session_number = sessionNumber;
     dat.runNumber = runNumber;
     dat.ts = ts; % trial sequences (predefiend)
     save(dat.datafile,'dat');
@@ -107,8 +111,8 @@ else
     screens = Screen('Screens');
     window_num = screens(end); % the last window
     window_info = Screen('Resolution', window_num);
-    window_rect = [0 0 1920 1080];
-    %window_rect = [0 0 window_info.width window_info.height]; % full screen
+    %window_rect = [0 0 1920 1080];
+    window_rect = [0 0 window_info.width window_info.height]; % full screen
     fontsize = 36;
     HideCursor();
 end
@@ -123,6 +127,16 @@ scale_H = (bb-tb).*0.25;
 % For rating scale
 lb = 5*W/18;            % left bound
 rb = 13*W/18;           % right bound
+
+% For cont rating scale
+lb1 = 1*W/18; %
+rb1 = 17*W/18; %
+
+% For overall rating scale
+lb2 = 5*W/18; %
+rb2 = 13*W/18; %s
+
+cir_center = [(lb1+rb1)/2 H*3/4+100];
 %% SETUP: Screen color
 bgcolor = 80;
 white = 255;
@@ -192,7 +206,7 @@ try
     end
     %% PREP: do biopac
     % I guess it works on only Window OS
-    if doBiopac
+    if doBIOPAC
         bio_t = GetSecs;
         dat.biopac_triggertime = bio_t; %BIOPAC timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
@@ -228,17 +242,20 @@ try
         %         2. Estimating pain experience with doMRcam
         %               Continuous estimating
         % --------------------------------------------------------- %
-        i=1;
+        rec_i = 0;
+        
         t=GetSecs;
         xc = [];
         yc = [];
         SetMouse(cir_center(1),cir_center(2));
+        radius = (rb2-lb2)/2; % radius
         while true
-            if (GetSecs - trial_t) >= ts.t{runNumber}{trial_i}.ITI + 12);
+            rec_i=rec_i+1;
+            if (GetSecs - trial_t) >= (ts.t{runNumber}{trial_i}.ITI + 12)
                 break;
             end
-            dat.dat{trial_i}.webcam_timestamp(i) = GetSecs-t;
-            i=i+1;
+            dat.dat{trial_i}.webcam_timestamp(rec_i) = GetSecs-t;
+            
             % IMAGE
             if doMRCam
                 ima = getsnapshot(vid);
@@ -249,10 +266,10 @@ try
                 Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
             end
             % Get Mouse
-            rec=rec+1;
+            %rec=rec+1;
             [x,y,button] = GetMouse(theWindow);
-            xc(rec,:)=x;
-            yc(rec,:)=y;
+            %xc(rec,:)=x;
+            %yc(rec,:)=y;
             % if the point goes further than the semi-circle, move the point to
             % the closest point
             
@@ -282,10 +299,10 @@ try
             
             
             %dat.dat{trial_i}.ratings1_end_timestamp = GetSecs;
-            dat.dat{trial_i}.ratings1_con_time_fromstart(rec_i,1) = GetSecs-start_while;
-            dat.dat{trial_i}.ratings1_con_xy(rec_i,1)= [x-cir_center(1) cir_center(2)-y]./radius;
-            dat.dat{trial_i}.ratings1_con_clicks(rec_i,1) = button;
-            dat.dat{trial_i}.ratings1_con_r_theta(rec_i,1) = [curr_r/radius curr_theta/180]; %radius and degree?
+            dat.dat{trial_i}.ratings1_con_time_fromstart(rec_i,1) = GetSecs-t;
+            dat.dat{trial_i}.ratings1_con_xy(rec_i,:) = [x-cir_center(1) cir_center(2)-y]./radius;
+            dat.dat{trial_i}.ratings1_con_clicks(rec_i,:) = button;
+            dat.dat{trial_i}.ratings1_con_r_theta(rec_i,:) = [curr_r/radius curr_theta/180]; %radius and degree?
         end
         
         % --------------------------------------------------------- %
@@ -344,7 +361,7 @@ try
     DrawFormattedText(theWindow, double('  '), 'center', 'center', white, [], [], [], 1.2);
     Screen('Flip', theWindow);
     % End BIOPAC
-    if doBiopac
+    if doBIOPAC
         dat.biopac_endtime = GetSecs;% biopac end timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
         waitsec_fromstarttime(bio_t, 0.5);
@@ -462,7 +479,7 @@ global window_rect lb rb tb bb scale_H            % scale size parameter
 global lb1 rb1 lb2 rb2;
 global cir_center
 global frame frame_idx vid
-
+global fontsize
 %%
 if contains(rating_type, 'Intensity')
     msg = '이번 자극이 얼마나 아팠나요?';
