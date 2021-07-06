@@ -84,12 +84,13 @@ if doBIOPAC
 end
 %% SETUP: frame grabbber
 if doMRCam
-    global vid frame frame_idx
+    global vid frame frame_idx video
     frame_idx = 1;
     frame = [];
     imaqreset;
     info=imaqhwinfo;
     vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' );
+    video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
 end
 %% SETUP: getting trigger from fRMI experiment PC
 if doGetTrigger
@@ -223,7 +224,9 @@ try
     for trial_i = start_trial:16 % start_trial:30
         %% PREP: START with getting MRcam
         if doMRCam
-            frame{frame_idx} = getsnapshot(vid);
+            temp_imgs=getsnapshot(vid);
+            frame{frame_idx} = temp_imgs;
+            writeVideo(video,temp_imgs);
             frame_idx = frame_idx +1;
         end
         
@@ -259,7 +262,8 @@ try
             % IMAGE
             if doMRCam
                 ima = getsnapshot(vid);
-                frame{frame_idx} = ima;
+                writeVideo(video,ima);
+                frame{frame_idx} = ima;                
                 frame_idx = frame_idx + 1;
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
@@ -368,7 +372,8 @@ try
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
     if doMRCam
-        dat.frame_grabber = frame;    
+        close(video);
+        %dat.frame_grabber = frame;    
         frame = []; 
         frame_idx = 1; 
         % Remove the video input object from memory:
@@ -459,7 +464,9 @@ function waitsec_fromstarttime_SEP(starttime, duration)
 global frame frame_idx vid
 
 while true
-    frame{frame_idx} = getsnapshot(vid);
+    ima = getsnapshot(vid);
+    frame{frame_idx} = ima;
+    writeVideo(video,ima);
     frame_idx = frame_idx + 1;
     if GetSecs - starttime >= duration
         break;
@@ -478,13 +485,14 @@ global white red red_Alpha orange bgcolor yellow; % set color
 global window_rect lb rb tb bb scale_H            % scale size parameter
 global lb1 rb1 lb2 rb2;
 global cir_center
-global frame frame_idx vid
+global frame frame_idx vid video 
 global fontsize
+
 %%
 if contains(rating_type, 'Intensity')
-    msg = '이번 자극이 얼마나 아팠나요?';
+    msg = '통증 세기';
 elseif contains(rating_type, 'Unpleasantness')
-    msg = '이번 자극이 얼마나 불쾌했나요?';
+    msg = '불쾌';
 end
 
 
@@ -494,7 +502,9 @@ radius = (rb2-lb2)/2; % radius
 SetMouse(cir_center(1),cir_center(2));
 while GetSecs - start_t < total_secs
     % getting imgaes
-    frame{frame_idx} = getsnapshot(vid);
+    ima = getsnapshot(vid);
+    frame{frame_idx} = ima;
+    writeVideo(video,ima);    
     frame_idx = frame_idx + 1;
     
     [x,y,button]=GetMouse(theWindow);

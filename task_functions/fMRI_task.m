@@ -279,7 +279,7 @@ try
         end
         
         if doWebcam
-            vidnames = fullfile(savedir,'fMRI_data',sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID.ObsID, runNumber, trial_i)); %  R00_T00_thermal_stim.mp4 
+            vidnames = fullfile(savedir,'OBS_VID',sprintf('vid_%s_R_%02d_T%02d_thermal_stim.mp4', SID.ObsID, runNumber, trial_i)); %  R00_T00_thermal_stim.mp4 
             video = VideoWriter(vidnames ,'MPEG-4'); %create the video object
             open(video); % open the file for writing
         end
