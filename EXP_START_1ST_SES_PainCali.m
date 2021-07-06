@@ -15,11 +15,11 @@ WaitSecs(1);
 main(ip,port,2); %START
 % main(ip,port,5) <- close
 %% SETTINGS: IDs
-SID = 'TEST_GEONWOO';
+SID = 'TEST_LME';
 %% SETTINGS: Options
 testmode = 0;
 %% ========================================================================
-%
+%         vb             
 PainCalibration(SID, ip, port); % run calibration task 
 
 % ========================================================================%
