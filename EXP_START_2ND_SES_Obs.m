@@ -13,7 +13,7 @@ IPs.fMRI_port = '';
 %% SETTINGS: Communication test 
 % 1. Pathway test
 main();
-% 2. Trigger test  
+  
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 0;    % do test mode (not full screens)
@@ -27,7 +27,7 @@ opts.dofmri = 0;
 
 %% SETTINGS: IDs
 SID.ExpID = 'TEST_____';           % ID for fMRI scanner participants
-SID.ObsID = 'TEST_SUHWAN2222';           % ID for observer participants
+SID.ObsID = 'TEST_SUHWAN222233333_210706';           % ID for observer participants
 %% generate ts
 ts = generate_ts_SEP('fMRI'); % generate trial sequences 
 %% START 

@@ -15,12 +15,12 @@ WaitSecs(1);
 main(ip,port,2); %START
 % main(ip,port,5) <- close
 %% SETTINGS: IDs
-SID = 'TEST_SUHWAN';
+SID = 'TEST_GEONWOO';
 %% SETTINGS: Options
-testmode = 1;
+testmode = 0;
 %% ========================================================================
 %
-PainCalibration(SID, ip, port,'test'); % run calibration task 
+PainCalibration(SID, ip, port); % run calibration task 
 
 % ========================================================================%
  

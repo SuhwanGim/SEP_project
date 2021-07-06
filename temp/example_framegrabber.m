@@ -25,9 +25,9 @@ image(frame)
 
 %%
 t = [];
-video = VideoWriter('yourvideo_high.mp4','MPEG-4'); %create the video object
+video = VideoWriter('yourvideo_high_test.mp4','MPEG-4'); %create the video object
 open(video); %open the file for writing
-for i = 1:2000
+for i = 1:200
     frame = getsnapshot(vid);
     image(frame);
     %t{i} = frame;
