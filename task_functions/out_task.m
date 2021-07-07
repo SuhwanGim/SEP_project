@@ -10,12 +10,7 @@ function out_task(SID, ts, sessionNumber, runNumber, ips, opts)
 %
 %   :: The things you should know on this functions
 %       - This function is for running experimental paradigm for Suhwan's
-%       project (disdaq = 10 secs).
-%
-%       1) Thermal_stimulus
-%                           : various intensity will be incldued here
-%       2) rating
-%                           : report expression about pain stimulus
+%       project (disdaq = 10 secs)
 %
 %   :: Requirements for this experiments and fucntions ::
 %    1) Latest version of PsychophysicsToolbox3
@@ -36,7 +31,6 @@ function out_task(SID, ts, sessionNumber, runNumber, ips, opts)
 % Written by Suhwan Gim
 %% SETUP: OPTIONS
 testmode = opts.testmode;
-dofmri = opts.dofmri;
 doMRCam = opts.doFace;
 doGetTrigger = opts.obs;
 doBIOPAC = opts.biopac;
@@ -164,47 +158,27 @@ try
         elseif keyCode(KbName('q'))==1
             abort_experiment;
         end
-        display_expmessage('실험자는 모든 것이 잘 준비되었는지 체크해주세요 (Biopac,trigger, USB, etc). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
+        display_expmessage('준비되었는지 체크해주세요 (Biopac and trigger). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     end
     
-    while (1)
-        % if this is for fMRI experiment, it will start with "s",
-        % but if behavioral, it will start with "r" key.
-        
-        if dofmri
-            [~,~,keyCode] = KbCheck; % experiment
-            if keyCode(KbName('s'))==1 % get 's' from a sync box
-                break
-            elseif keyCode(KbName('q'))==1
-                abort_experiment;
-            end
-        else % for behavior
-            [~,~,keyCode] = KbCheck;
-            if keyCode(KbName('r'))==1
-                break
-            elseif keyCode(KbName('q'))==1
-                abort_experiment;
-            end
-        end
-        display_runmessage(dofmri); % until 5 or r; see subfunctions
-    end
-    
-    %% do fMRI (disdac_sec = 10)
-    if dofmri
-        dat.disdaq_sec = 10;
-        fmri_t = GetSecs;
-        % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
+    %% Wating trigger            
+    dat.run_starttime = GetSecs;    
+    % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
+    if doGetTrigger
         Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
-        Screen('Flip', theWindow);
-        dat.runscan_starttime = GetSecs;
-        waitsec_fromstarttime(fmri_t, 4);
+        DrawFormattedText(theWindow, double('싱크 중...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
+        Screen('Flip', theWindow);  
         
-        % 4 seconds: Blank
-        Screen(theWindow,'FillRect',bgcolor, window_rect);
-        Screen('Flip', theWindow);
-        waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
+        %
+        DataReceived =[];
+        dat.get_trigger_wait_timestamp = GetSecs;    
+        rawData = fread(tcpipClient,300/8,'double');
+        dat.get_trigger_received_timestamp = GetSecs; % sync onset
+        DataReceived = [DataReceived rawData];
+        disp('received');
+                       
     end
+    
     %% PREP: do biopac
     % I guess it works on only Window OS
     if doBIOPAC
@@ -251,7 +225,9 @@ try
         xc = [];
         yc = [];
         SetMouse(cir_center(1),cir_center(2));
-        radius = (rb2-lb2)/2; % radius
+        radius = ((12*W/18)-(6*W/18))/2; % radius
+%         lb3 = 6*W/18; %
+%         rb3 = 12*W/18; %s
         while true
             rec_i=rec_i+1;
             if (GetSecs - trial_t) >= (ts.t{runNumber}{trial_i}.ITI + 12)
@@ -267,13 +243,11 @@ try
                 frame_idx = frame_idx + 1;
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
-                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
+                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[],[],[],[],[],[]);
             end
             % Get Mouse
             %rec=rec+1;
             [x,y,button] = GetMouse(theWindow);
-            %xc(rec,:)=x;
-            %yc(rec,:)=y;
             % if the point goes further than the semi-circle, move the point to
             % the closest point
             
@@ -297,7 +271,7 @@ try
             
             
             % Draw Scale
-            draw_scale('overall_predict_semicircular');
+            draw_scale('overall_predict_semicircular_SEP');
             Screen('DrawDots', theWindow, [x y]', 20, [255 164 0 130], [0 0], 1);  %dif color
             Screen('Flip',theWindow);
             
@@ -368,7 +342,7 @@ try
     if doBIOPAC
         dat.biopac_endtime = GetSecs;% biopac end timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
-        waitsec_fromstarttime(bio_t, 0.5);
+        waitsec_fromstarttime(bio_t, 1);
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
     if doMRCam

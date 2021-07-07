@@ -9,12 +9,14 @@ IPs.pathway_port = 20121;
 
 IPs.my_IP = '';      % Out-PC
 IPs.my_port = 30000; % observer computer PORT
-%% SETTINGS: Communication test
+%% TEST: PATHWAY
 main(ip,port,1,76); %select the program 
 WaitSecs(1);
 main(ip,port,2); %ready to pre-start
 WaitSecs(1);
 main(ip,port,2); %START
+%% TEST: other behav PC
+IPs.my_IP 
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
@@ -56,7 +58,8 @@ fMRI_task(IDs, ts, runnumber, IPs, opts)
 %% 
 runnumber = 6;
 fMRI_task(IDs, ts, runnumber, IPs, opts)
-
-%% Movie runs 
-movie_number=1;
-movie_task(IDs, movie_number, opts)
+%% See this scripts for next sessions
+edit EXP_START_3RD_SES_rating_movies.m
+% %% Movie runs 
+% movie_number=1;
+% movie_task(IDs, movie_number, opts)

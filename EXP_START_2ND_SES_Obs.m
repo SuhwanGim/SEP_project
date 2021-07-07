@@ -30,28 +30,31 @@ SID.ExpID = 'TEST_____';           % ID for fMRI scanner participants
 SID.ObsID = 'TEST_SUHWAN222233333_210706';           % ID for observer participants
 %% generate ts
 ts = generate_ts_SEP('fMRI'); % generate trial sequences 
+% ts should be made before fMRI experiments 
+sessionNumber = 1;
 %% START 
 runNumber = 1;
-sessionNumber = 1;
 out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
 %out_task(IDs, ts, runNumber, IPs, opts)
 
 %%
-runnumber = 2;
-out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 2;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
 
 %%  
-runnumber = 3;
-out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 3;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
 
 %% 
-runnumber = 4;
-out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 4;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
 
 %% 
-runnumber = 5;
-out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 5;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
 
 %% 
-runnumber = 6;
-out_task(IDs, ts, runNumber, IPs, opts)
+runNumber = 6;
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
+
+%%

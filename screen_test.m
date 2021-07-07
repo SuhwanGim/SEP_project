@@ -108,8 +108,15 @@ Screen('TextSize', theWindow, fontsize);
 sTime = GetSecs;
 ready2=0;
 rec=0;
+display_expmessage('실험자는 모든 것이 잘 준비되었는지 체크해주세요 (Biopac,trigger, USB, etc). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
+%radius = (rb-lb)/2; % radius
+radius = ((12*W/18)-(6*W/18))/2; % radius
+cir_center = [(lb1+rb1)/2 H*3/4+100];
+SetMouse(cir_center(1), cir_center(2)); % set mouse at the center
+xc = [];
+yc = []; 
 while ~ready2
-    display_expmessage('실험자는 모든 것이 잘 준비되었는지 체크해주세요 (Biopac,trigger, USB, etc). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
+    %display_expmessage('실험자는 모든 것이 잘 준비되었는지 체크해주세요 (Biopac,trigger, USB, etc). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     rec=rec+1;
     [x,y,button] = GetMouse(theWindow);
     xc(rec,:)=x; 
@@ -117,14 +124,16 @@ while ~ready2
     
     rating_type = 'semicircular';
     %draw_scale('overall_motor_semicircular');
-    draw_scale('overall_predict_semicircular');
+    draw_scale('overall_predict_semicircular_SEP');
     Screen('DrawDots', theWindow, [x y]', 20, [255 164 0 130], [0 0], 1);  %dif color
     % if the point goes further than the semi-circle, move the point to
     % the closest point
-    radius = (rb-lb)/2; % radius
+    
     theta = atan2(cir_center(2)-y,x-cir_center(1));
-    if y > bb
-        y = bb;
+    % For control a mouse cursor:
+    % send to diameter of semi-circle
+    if y > cir_center(2) %bb
+        y = cir_center(2); %bb;
         SetMouse(x,y);
     end
     % send to arc of semi-circle
@@ -133,6 +142,7 @@ while ~ready2
         y = cir_center(2)-radius*sin(theta);
         SetMouse(x,y);
     end
+    
     
     %draw_scale('overall_motor_semicircular');
     theta = rad2deg(theta);
@@ -144,7 +154,7 @@ while ~ready2
     %Screen(theWindow,'DrawLines', [xc yc]', 5, 255);
     Screen('Flip',theWindow);
     if button(1)
-        draw_scale('overall_avoidance_semicircular');
+        draw_scale('overall_predict_semicircular_SEP');
         Screen('DrawDots', theWindow, [x y]', 18, red, [0 0], 1);  % Feedback
         Screen('Flip',theWindow);
         WaitSecs(0.5);

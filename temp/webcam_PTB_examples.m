@@ -1,7 +1,7 @@
 
 % Construct a webcam object
 %close(camObj);
-camObj = webcam(2); % The resoultion of webcam can be modified in WinOS
+camObj = webcam(1); % The resoultion of webcam can be modified in WinOS
 % Preview a stream of image frames.
 %preview(camObj);
 
@@ -11,12 +11,19 @@ camObj = webcam(2); % The resoultion of webcam can be modified in WinOS
 
 %%
 
+%% Global variable
+global theWindow W H; % window property
+global white red orange bgcolor; % color
+global window_rect prompt_ex lb rb lb1 rb1 lb2 rb2 tb bb scale_H promptW promptH; % rating scale
+global fontsize anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
+
+
 Screen('Clear');
 Screen('CloseAll');
     
 window_num = 0;
 Screen('Preference', 'SkipSyncTests', 1);
-window_rect = [0 0 1600 900]; % in the test mode, use a little smaller screen [but, wide resoultions]
+window_rect = [0 0 1920 1080]; % in the test mode, use a little smaller screen [but, wide resoultions]
 fontsize = 32;
 bgcolor = 80;
 white = 255;
@@ -27,7 +34,13 @@ H = window_rect(4); %height of screen
 % For rating scale
 lb = 5*W/18;            % left bound
 rb = 13*W/18;           % right bound
+% For cont rating scale 
+lb1 = 1*W/18; %
+rb1 = 17*W/18; %
 
+% For overall rating scale
+lb2 = 5*W/18; %
+rb2 = 13*W/18; %s
 
 red_Alpha = [255 164 0 130]; % RGB + A(Level of tranceprency)
 orange = [255 164 0];
@@ -58,9 +71,9 @@ while GetSecs - t < secs
     % ima = imresize(ima,0.5,'nearest');    
     writeVideo(video,ima ); %write the image to file    
     
-    
+    draw_scale('overall_predict_semicircular_SEP');
     tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
-    Screen('DrawTexture', theWindow,tex1,[], [5*W/18 5*H/18 13*W/18 13*H/18],[],[],[],[],[],[]);
+    Screen('DrawTexture', theWindow,tex1,[], [5*W/18 1*H/18 13*W/18 9*H/18],[],[],[],[],[],[]);
     
     % Draw quiz
     %DrawFormattedText(theWindow, num2str(double(GetSecs - t)), 'center', 'center', white, [], [], [], 1.2); % null screen

@@ -234,17 +234,7 @@ try
         %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
         display_expmessage('시작합니다...');
         Screen('Flip', theWindow);
-    end
-    
-    %% PREP : send trigger to the observation computer
-    if doSendTrigger
-        dat.sendTriggerStart_timestamp = GetSecs;
-        fopen(tcpipServer);
-        fwrite(tcpipServer, trg_dat(:), 'double'); % send data
-        fclose(tcpipServer);
-        dat.sendTriggerEnd_timestamp = GetSecs;
-    end
-    
+    end            
     %% PREP: Wait 4 and 14 secs more 
     if dofmri
         dat.runscan_starttime = GetSecs;
@@ -257,6 +247,14 @@ try
     end
     %% 
     % waitsec_fromstarttime(GetSecs, 8);
+    %% PREP : send trigger to the observation computer
+    if doSendTrigger
+        dat.sendTriggerStart_timestamp = GetSecs;
+        fopen(tcpipServer);
+        fwrite(tcpipServer, trg_dat(:), 'double'); % send data
+        fclose(tcpipServer);
+        dat.sendTriggerEnd_timestamp = GetSecs;
+    end
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
