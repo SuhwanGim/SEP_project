@@ -297,7 +297,7 @@ try
         % black screen
         Screen('Flip',theWindow); % black screen 
         if doPathway
-            toc;
+            tic;
             dat.dat{trial_i}.heat_start_txt = main(ip,port,2); % start heat signal
             dat.dat{trial_i}.heat_onsets_timestamp = GetSecs;
             dat.dat{trial_i}.heat_trigger_duration = toc;
