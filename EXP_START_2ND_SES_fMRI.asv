@@ -19,9 +19,9 @@ main(ip,port,2); %START
 %IPs.my_IP 
 %% SETTINGS: Options
 opts = [];
-opts.testmode = 1;    % do test mode (not full screens)
+opts.testmode = 0;    % do test mode (not full screens)
 opts.dofmri = 1;        % do fMRI (get fMRI signal)
-opts.obs = 0;         % do sending trigger to observer's computer 
+opts.obs = 1;         % do sending trigger to observer's computer 
 opts.doFace = 1;      % get webcam mode
 opts.Pathway = 1;     % do using pathway 
 %% SETTINGS: IDs
