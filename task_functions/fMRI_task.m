@@ -102,6 +102,16 @@ if doWebcam
     camObj = webcam(find(contains(CAMLIST,'HD'))); % The resoultion of webcam can be modified in WinOS
     %camObj.Resolution = {''};
 end
+%%
+if doSendTrigger
+%    Screen('Flip', theWindow);
+    %set TCP/IP environment
+    trg_dat = 100;
+    trg_dat = im2double(trg_dat);
+    s = whos('data');
+    tcpipServer = tcpip(my_ip, my_port, 'NetworkRole','server');
+    set(tcpipServer, 'OutputBufferSize',s.bytes);
+end
 %% SETUP: Load pathway program
 path_prog = load_PathProgram('MPC');
 for i = 1:numel(reg.FinalLMH_5Level)
@@ -114,15 +124,6 @@ for i = 1:numel(reg.FinalLMH_5Level)
     end
 end
 stim_degree=cell2mat(degree);
-%% SETUP: envrioemnt for set
-if doSendTrigger
-    %set TCP/IP environment    
-    trg_dat = 100;
-    trg_dat = im2double(trg_dat);
-    s = whos('data');
-    tcpipServer = tcpip(my_ip, my_port, 'NetworkRole','server');
-    set(tcpipServer, 'OutputBufferSize',s.bytes);
-end
 %% SETUP: Screen size
 Screen('Clear');
 Screen('CloseAll');
@@ -231,10 +232,11 @@ try
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
         %Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
-        display_expmessage('시작합니다...');
-        Screen('Flip', theWindow);
+        %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds       
+        
     end            
+     display_expmessage('시작합니다...');
+     Screen('Flip', theWindow);
     %% PREP: Wait 4 and 14 secs more 
     if dofmri
         dat.runscan_starttime = GetSecs;
@@ -245,10 +247,12 @@ try
         Screen('Flip', theWindow);
         waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
     end
-    %% 
-    % waitsec_fromstarttime(GetSecs, 8);
+    %%
+    waitsec_fromstarttime(GetSecs, 8);
     %% PREP : send trigger to the observation computer
     if doSendTrigger
+        Screen('Flip', theWindow);
+        
         dat.sendTriggerStart_timestamp = GetSecs;
         fopen(tcpipServer);
         fwrite(tcpipServer, trg_dat(:), 'double'); % send data
@@ -420,6 +424,7 @@ function display_runmessage(dofmri)
 % HERE: YOU CAN ADD MESSAGES FOR EACH RUN USING RUN_NUM and RUN_I
 
 global theWindow white bgcolor window_rect; % rating scale
+global fontsize
 
 if dofmri
     Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
@@ -447,6 +452,7 @@ global white red red_Alpha orange bgcolor yellow; % set color
 global window_rect lb rb tb bb scale_H            % scale size parameter
 global lb1 rb1 lb2 rb2;
 global cir_center
+global fontsize
 %%
 if contains(rating_type, 'Intensity')
     msg = '이번 자극이 얼마나 아팠나요?';

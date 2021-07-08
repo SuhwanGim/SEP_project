@@ -7,7 +7,7 @@ IPs = [];
 IPs.pathway_IP = '192.168.0.2'; % Pathway
 IPs.pathway_port = 20121;
 
-IPs.my_IP = '';      % Out-PC
+IPs.my_IP = '0.0.0.0';      % Out-PC
 IPs.my_port = 30000; % observer computer PORT
 %% TEST: PATHWAY
 main(ip,port,1,76); %select the program 
@@ -16,18 +16,18 @@ main(ip,port,2); %ready to pre-start
 WaitSecs(1);
 main(ip,port,2); %START
 %% TEST: other behav PC
-IPs.my_IP 
+%IPs.my_IP 
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
 opts.dofmri = 0;        % do fMRI (get fMRI signal)
-opts.obs = 0;         % do sending trigger to observer's computer 
-opts.doFace = 1;      % do webcam mode
+opts.obs = 1;         % do sending trigger to observer's computer 
+opts.doFace = 1;      % get webcam mode
 opts.Pathway = 0;     % do using pathway 
 %% SETTINGS: IDs
 % should be different
-IDs.ExpID = 'TEST_SUHWAN';           % ID for fMRI scanner participants
-IDs.ObsID = 'TEST_SUHWAN2';           % ID for observer participants
+IDs.ExpID = 'TEST_LME';           % ID for fMRI scanner participants
+IDs.ObsID = 'TEST_200707_Suhwan';           % ID for observer participants
 %% generate ts
 % This ts will be genereated before fMRI sessiosn for both estimating task and pain task. 
 ts = generate_ts_SEP('fMRI'); 
