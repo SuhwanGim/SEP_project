@@ -17,7 +17,7 @@ IPs.fMRI_port = 30000;
 %% SETTINGS: Options
 opts = [];
 opts.testmode = 1;    % do test mode (not full screens)
-opts.doFace = 0;      % do getting MR participant's face 
+opts.doFace = 1;      % do getting MR participant's face 
 opts.biopac = 0;      % do getting biocpac 
 opts.obs = 1;         % do getting trigger to observer's computer 
 opts.fmri_pc = IPs.fMRI_ip;

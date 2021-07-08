@@ -86,6 +86,7 @@ if doMRCam
     info=imaqhwinfo;
     vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' );
     video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
+    open(video);
 end
 %% SETUP: Screen size
 Screen('Clear');
@@ -153,20 +154,21 @@ try
         end
         display_expmessage('준비되었는지 체크해주세요 (Biopac and trigger). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     end
-    
+    Screen('Flip', theWindow);
    %% Wating trigger            
     dat.run_starttime = GetSecs;    
     % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
     if doGetTrigger
+        display_expmessage('싱크 중...');
         tcpipClient = tcpip(fmri_ip, fmri_port);
         set(tcpipClient,'InputBufferSize',300);
-        set(tcpipClient,'Timeout',1); %Waiting time in seconds to complete read and write operations
+        set(tcpipClient,'Timeout',0.01); %Waiting time in seconds to complete read and write operations
         fopen(tcpipClient);
         get(tcpipClient, 'BytesAvailable');
         %Screen(theWindow, 'FillRect', bgcolor, window_rect);
         %DrawFormattedText(theWindow, double('싱크 중...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
-        display_expmessage('싱크 중...');
-        Screen('Flip', theWindow);
+      
+        
         
         %
         DataReceived =[];
@@ -392,7 +394,7 @@ function display_runmessage(dofmri)
 % HERE: YOU CAN ADD MESSAGES FOR EACH RUN USING RUN_NUM and RUN_I
 
 global theWindow white bgcolor window_rect fontsize; % rating scale
-global doMRCam
+global doMRCam video
 
 if dofmri
     Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
@@ -437,7 +439,7 @@ function waitsec_fromstarttime_SEP(starttime, duration)
 % Using this function instead of WaitSecs()
 % function waitsec_fromstarttime(starttime, duration)
 global frame frame_idx vid
-global doMRCam
+global doMRCam video
 
 while true
     if doMRCam
