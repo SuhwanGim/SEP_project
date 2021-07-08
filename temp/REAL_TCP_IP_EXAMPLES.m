@@ -1,6 +1,6 @@
 
 %%
-ip = '';   % SERVER PC's IP
+ip = '192.168.0.3';   % SERVER PC's IP
 port = 30000; % SERVER PC's Port
 
 %% SERVER (fMRI stimulus comuputer) in fMRI_task

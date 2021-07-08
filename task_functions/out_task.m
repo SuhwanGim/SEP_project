@@ -48,6 +48,7 @@ global fontsize;                                  % fontsize
 global cir_center
 global lb1 rb1 lb2 rb2;
 global anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
+global doMRCam
 
 %global Participant; % response box
 %% SETUP: DATA and Subject INFO
@@ -85,14 +86,6 @@ if doMRCam
     info=imaqhwinfo;
     vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' );
     video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
-end
-%% SETUP: getting trigger from fRMI experiment PC
-if doGetTrigger
-    tcpipClient = tcpip(fmri_ip, fmri_port);
-    set(tcpipClient,'InputBufferSize',300);
-    set(tcpipClient,'Timeout',1); %Waiting time in seconds to complete read and write operations
-    fopen(tcpipClient);
-    get(tcpipClient, 'BytesAvailable');
 end
 %% SETUP: Screen size
 Screen('Clear');
@@ -161,22 +154,29 @@ try
         display_expmessage('준비되었는지 체크해주세요 (Biopac and trigger). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     end
     
-    %% Wating trigger            
+   %% Wating trigger            
     dat.run_starttime = GetSecs;    
     % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
     if doGetTrigger
-        Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        DrawFormattedText(theWindow, double('싱크 중...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
-        Screen('Flip', theWindow);  
+        tcpipClient = tcpip(fmri_ip, fmri_port);
+        set(tcpipClient,'InputBufferSize',300);
+        set(tcpipClient,'Timeout',1); %Waiting time in seconds to complete read and write operations
+        fopen(tcpipClient);
+        get(tcpipClient, 'BytesAvailable');
+        %Screen(theWindow, 'FillRect', bgcolor, window_rect);
+        %DrawFormattedText(theWindow, double('싱크 중...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
+        display_expmessage('싱크 중...');
+        Screen('Flip', theWindow);
         
         %
         DataReceived =[];
-        dat.get_trigger_wait_timestamp = GetSecs;    
+        dat.get_trigger_wait_timestamp = GetSecs;
         rawData = fread(tcpipClient,300/8,'double');
         dat.get_trigger_received_timestamp = GetSecs; % sync onset
         DataReceived = [DataReceived rawData];
+        
         disp('received');
-                       
+        
     end
     
     %% PREP: do biopac
@@ -392,6 +392,7 @@ function display_runmessage(dofmri)
 % HERE: YOU CAN ADD MESSAGES FOR EACH RUN USING RUN_NUM and RUN_I
 
 global theWindow white bgcolor window_rect fontsize; % rating scale
+global doMRCam
 
 if dofmri
     Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
@@ -436,12 +437,15 @@ function waitsec_fromstarttime_SEP(starttime, duration)
 % Using this function instead of WaitSecs()
 % function waitsec_fromstarttime(starttime, duration)
 global frame frame_idx vid
+global doMRCam
 
 while true
-    ima = getsnapshot(vid);
-    frame{frame_idx} = ima;
-    writeVideo(video,ima);
-    frame_idx = frame_idx + 1;
+    if doMRCam
+        ima = getsnapshot(vid);
+        frame{frame_idx} = ima;
+        writeVideo(video,ima);
+        frame_idx = frame_idx + 1;
+    end
     if GetSecs - starttime >= duration
         break;
     end
@@ -461,6 +465,7 @@ global lb1 rb1 lb2 rb2;
 global cir_center
 global frame frame_idx vid video 
 global fontsize
+global doMRCam
 
 %%
 if contains(rating_type, 'Intensity')
@@ -475,11 +480,13 @@ start_while = GetSecs;
 radius = (rb2-lb2)/2; % radius
 SetMouse(cir_center(1),cir_center(2));
 while GetSecs - start_t < total_secs
-    % getting imgaes
-    ima = getsnapshot(vid);
-    frame{frame_idx} = ima;
-    writeVideo(video,ima);    
-    frame_idx = frame_idx + 1;
+    if doMRCam
+        % getting imgaes
+        ima = getsnapshot(vid);
+        frame{frame_idx} = ima;
+        writeVideo(video,ima);
+        frame_idx = frame_idx + 1;
+    end
     
     [x,y,button]=GetMouse(theWindow);
     rec_i= rec_i+1;
