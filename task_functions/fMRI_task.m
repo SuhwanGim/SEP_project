@@ -82,7 +82,7 @@ savedir = fullfile(pwd,'data');
 load(fullfile(savedir, 'PainCali_data',sprintf('SEP_PainCali_data_Sub-%s_session01_run01.mat',SID.ExpID)),'reg');
 if exist(fname, 'file')
     % load previous dat files
-    load(fname);
+    load(fname,'dat');
     start_trial = trial_previous; % start with this trial
 else
     % generate and save data
@@ -102,18 +102,17 @@ if doWebcam
     camObj = webcam(find(contains(CAMLIST,'HD'))); % The resoultion of webcam can be modified in WinOS
     %camObj.Resolution = {''};
 end
-%%
+%% SETUP: TCP/IP (trigger to behavioral computer)
 if doSendTrigger
-%    Screen('Flip', theWindow);
-    %set TCP/IP environment
-    trg_dat = 100;
+    trg_dat = 100; %set packet 
     trg_dat = im2double(trg_dat);
     s = whos('data');
-    tcpipServer = tcpip(my_ip, my_port, 'NetworkRole','server');
+    tcpipServer = tcpip(my_ip, my_port, 'NetworkRole','server'); % Build the tcpip
     set(tcpipServer, 'OutputBufferSize',s.bytes);
 end
 %% SETUP: Load pathway program
-path_prog = load_PathProgram('MPC');
+degree = []; 
+path_prog = load_PathProgram('MPC'); % SEP
 for i = 1:numel(reg.FinalLMH_5Level)
     for ii = 1:length(path_prog)
         if reg.FinalLMH_5Level(i) == path_prog{ii,1}
@@ -169,9 +168,7 @@ rb1 = 17*W/18; %
 lb2 = 5*W/18; %
 rb2 = 13*W/18; %s
 
-
 cir_center = [(lb1+rb1)/2 H*3/4+100];
-
 %% SETUP: Screen color
 bgcolor = 80;
 white = 255;
@@ -182,8 +179,6 @@ yellow = [255 220 0];
 %% SETUP: Screen parameters
 font = 'NanumBarunGothic';
 %font = 'D2Coding';
-stimText = '+';
-rating_type = 'semicircular';
 %% START: Screen
 theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect);       % start the screen
 Screen('Preference','TextEncodingLocale','ko_KR.UTF-8');                  % text encoding
@@ -226,33 +221,26 @@ try
     end
     
     
-    %% PREP: do fMRI (disdaq_sec = about 10)
+    %% PREP: do fMRI (disdaq_sec = about 10) and 
     if dofmri
         dat.disdaq_sec = 10 + 8 ; % 18 TRs
         fmri_t = GetSecs;
         % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)
         %Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds       
-        
+        %DrawFormattedText(theWindow, double('시작합니다...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds               
     end            
-     display_expmessage('시작합니다...');
-     Screen('Flip', theWindow);
-    %% PREP: Wait 4 and 14 secs more 
+    display_expmessage('시작합니다... ');    
+    %% PREP: Wait 18 secs more 
     if dofmri
         dat.runscan_starttime = GetSecs;
-        waitsec_fromstarttime(fmri_t, 4);
-        
-        % 4 seconds: Blank
-        Screen(theWindow,'FillRect',bgcolor, window_rect);
+        waitsec_fromstarttime(fmri_t, 4);        
+        % 4 seconds: Blank        
         Screen('Flip', theWindow);
-        waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS
-    end
-    %%
-    waitsec_fromstarttime(GetSecs, 8);
+        waitsec_fromstarttime(fmri_t, dat.disdaq_sec); % ADJUST THIS + 8 secs for stable modeling 
+    end    
     %% PREP : send trigger to the observation computer
     if doSendTrigger
-        Screen('Flip', theWindow);
-        
+        Screen('Flip', theWindow);        
         dat.sendTriggerStart_timestamp = GetSecs;
         fopen(tcpipServer);
         fwrite(tcpipServer, trg_dat(:), 'double'); % send data

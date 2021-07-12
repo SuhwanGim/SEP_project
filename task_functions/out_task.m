@@ -4,10 +4,6 @@ function out_task(SID, ts, sessionNumber, runNumber, ips, opts)
 %  :: WORKING ON::
 %       : Suhwan Gim ( Feb. 22. 2021)
 %
-%  :: Purpose of this study ::
-%       : Participants will be told that you are going to experience
-%       thermal stimulus
-%
 %   :: The things you should know on this functions
 %       - This function is for running experimental paradigm for Suhwan's
 %       project (disdaq = 10 secs)
@@ -29,17 +25,6 @@ function out_task(SID, ts, sessionNumber, runNumber, ips, opts)
 %       - 'biopac'
 %   ====================================================================
 % Written by Suhwan Gim
-%% SETUP: OPTIONS
-testmode = opts.testmode;
-doMRCam = opts.doFace;
-doGetTrigger = opts.obs;
-doBIOPAC = opts.biopac;
-% for MY PC ip and port
-% it is for sending trigger packet
-fmri_ip = ips.fMRI_ip;
-fmri_port = ips.fMRI_port;
-%%
-start_trial = 1;
 %% SETUP: GLOBAL variables
 global theWindow W H window_num;                  % window screen property
 global white red red_Alpha orange bgcolor yellow; % set color
@@ -49,15 +34,23 @@ global cir_center
 global lb1 rb1 lb2 rb2;
 global anchor_y anchor_y2 anchor anchor_xl anchor_xr anchor_yu anchor_yd anchor_lms anchor_lms_y anchor_lms_x; % anchors
 global doMRCam
-
+%% SETUP: OPTIONS
+testmode = opts.testmode;
+doMRCam = opts.doFace;
+doGetTrigger = opts.obs;
+doBIOPAC = opts.biopac;
+% for MY PC ip and port
+% it is for sending trigger packet
+fmri_ip = ips.fMRI_ip;
+fmri_port = ips.fMRI_port;
+start_trial = 1;
 %global Participant; % response box
 %% SETUP: DATA and Subject INFO
 savedir = fullfile(pwd, 'data');
 [fname,trial_previous] = subjectinfo_check_SEP(SID.ObsID,savedir, sessionNumber,runNumber,'Obs'); % subfunction %start_trial
-
 if exist(fname, 'file')
     % load previous dat files
-    load(fname);
+    load(fname,'dat');
     start_trial = trial_previous; % start with this trial
 else
     % generate and save data
@@ -68,7 +61,7 @@ else
     dat.starttime_getsecs = GetSecs; % in the same format of timestamps for each trial
     dat.session_number = sessionNumber;
     dat.runNumber = runNumber;
-    dat.ts = ts; % trial sequences (predefiend)
+    dat.ts = ts; % trial sequences (pre-defiend)
     save(dat.datafile,'dat');
 end
 %% SETUP: BIOPAC
@@ -77,14 +70,13 @@ if doBIOPAC
     biopac_channel = 0;
     ljHandle = BIOPAC_setup(channel_n); % BIOPAC SETUP
 end
-%% SETUP: frame grabbber
+%% SETUP: frame grabbber (getting MRcam movie frame)
 if doMRCam
-    global vid frame frame_idx video
+    global vid  frame_idx video % if the frame grabber is ready 
     frame_idx = 1;
-    frame = [];
     imaqreset;
     info=imaqhwinfo;
-    vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' );
+    vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' ); % set resoultions 
     video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
     open(video);
 end
@@ -103,7 +95,7 @@ else
     %window_rect = [0 0 1920 1080];
     window_rect = [0 0 window_info.width window_info.height]; % full screen
     fontsize = 36;
-    HideCursor();
+    HideCursor(); % ShowCursor 
 end
 W = window_rect(3); %width of screen
 H = window_rect(4); %height of screen
@@ -135,7 +127,6 @@ orange = [255 164 0];
 yellow = [255 220 0];
 %% SETUP: Screen parameters
 font = 'NanumBarunGothic';
-stimText = '+';
 %% START: Screen
 theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect);       % start the screen
 Screen('Preference','TextEncodingLocale','ko_KR.UTF-8');                  % text encoding
@@ -155,44 +146,39 @@ try
         display_expmessage('준비되었는지 체크해주세요 (Biopac and trigger). \n 모두 준비되었으면 SPACE BAR를 눌러주세요.'); % until space; see subfunctions
     end
     Screen('Flip', theWindow);
-   %% Wating trigger            
-    dat.run_starttime = GetSecs;    
-    % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
-    if doGetTrigger
-        display_expmessage('싱크 중...');
-        tcpipClient = tcpip(fmri_ip, fmri_port);
-        set(tcpipClient,'InputBufferSize',300);
-        set(tcpipClient,'Timeout',0.01); %Waiting time in seconds to complete read and write operations
-        fopen(tcpipClient);
-        get(tcpipClient, 'BytesAvailable');
-        %Screen(theWindow, 'FillRect', bgcolor, window_rect);
-        %DrawFormattedText(theWindow, double('싱크 중...'), 'center', 'center', white, [], [], [], 1.2); % 4 seconds
-      
-        
-        
-        %
-        DataReceived =[];
-        dat.get_trigger_wait_timestamp = GetSecs;
-        rawData = fread(tcpipClient,300/8,'double');
-        dat.get_trigger_received_timestamp = GetSecs; % sync onset
-        DataReceived = [DataReceived rawData];
-        
-        disp('received');
-        
-    end
-    
     %% PREP: do biopac
-    % I guess it works on only Window OS
+    % It only works on Window OS
     if doBIOPAC
         bio_t = GetSecs;
         dat.biopac_triggertime = bio_t; %BIOPAC timestamp
         BIOPAC_trigger(ljHandle, biopac_channel, 'on');
         Screen(theWindow,'FillRect',bgcolor, window_rect);
         Screen('Flip', theWindow);
-        waitsec_fromstarttime(bio_t, 2); % ADJUST THIS
+        waitsec_fromstarttime(bio_t, 2); % ADJUST THIS % Two secs for start
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
-    
+    %% Wating trigger            
+    dat.run_starttime = GetSecs;    
+    % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
+    if doGetTrigger
+        % message 
+        % getting trigger
+        tcpipClient = tcpip(fmri_ip, fmri_port);
+        set(tcpipClient,'InputBufferSize',300);
+        set(tcpipClient,'Timeout',0.01); % Waiting time in seconds to complete read and write operations
+        
+        %
+        display_expmessage('싱크 중...');               
+        % Ready 
+        fopen(tcpipClient);
+        get(tcpipClient, 'BytesAvailable');                     
+        
+        dat.get_trigger_wait_timestamp = GetSecs;
+        rawData = fread(tcpipClient,300/8,'double');
+        dat.get_trigger_received_timestamp = GetSecs; % sync onset        
+        fprintf('\n\n received message: %s \n',rawData);
+        
+    end            
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
@@ -200,12 +186,11 @@ try
     for trial_i = start_trial:16 % start_trial:30
         %% PREP: START with getting MRcam
         if doMRCam
-            temp_imgs=getsnapshot(vid);
-            frame{frame_idx} = temp_imgs;
+            % vid (frame) -> video (mp4)
+            temp_imgs = getsnapshot(vid);            
             writeVideo(video,temp_imgs);
             frame_idx = frame_idx +1;
-        end
-        
+        end        
         % Start of Trial
         trial_t = GetSecs;
         dat.dat{trial_i}.TrialStartTimestamp = trial_t;
@@ -228,8 +213,6 @@ try
         yc = [];
         SetMouse(cir_center(1),cir_center(2));
         radius = ((12*W/18)-(6*W/18))/2; % radius
-%         lb3 = 6*W/18; %
-%         rb3 = 12*W/18; %s
         while true
             rec_i=rec_i+1;
             if (GetSecs - trial_t) >= (ts.t{runNumber}{trial_i}.ITI + 12)
@@ -240,8 +223,7 @@ try
             % IMAGE
             if doMRCam
                 ima = getsnapshot(vid);
-                writeVideo(video,ima);
-                frame{frame_idx} = ima;                
+                writeVideo(video,ima);                
                 frame_idx = frame_idx + 1;
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
@@ -348,10 +330,8 @@ try
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
     if doMRCam
-        close(video);
-        %dat.frame_grabber = frame;    
-        frame = []; 
-        frame_idx = 1; 
+        close(video);                
+        dat.video_total_idx = frame_idx;        
         % Remove the video input object from memory:
         delete(vid);
     end
@@ -394,7 +374,6 @@ function display_runmessage(dofmri)
 % HERE: YOU CAN ADD MESSAGES FOR EACH RUN USING RUN_NUM and RUN_I
 
 global theWindow white bgcolor window_rect fontsize; % rating scale
-global doMRCam video
 
 if dofmri
     Run_start_text = double('참가자가 준비되었으면 이미징을 시작합니다 (s).');
@@ -438,13 +417,12 @@ end
 function waitsec_fromstarttime_SEP(starttime, duration)
 % Using this function instead of WaitSecs()
 % function waitsec_fromstarttime(starttime, duration)
-global frame frame_idx vid
+global frame_idx vid
 global doMRCam video
 
 while true
     if doMRCam
-        ima = getsnapshot(vid);
-        frame{frame_idx} = ima;
+        ima = getsnapshot(vid);       
         writeVideo(video,ima);
         frame_idx = frame_idx + 1;
     end
@@ -465,9 +443,8 @@ global white red red_Alpha orange bgcolor yellow; % set color
 global window_rect lb rb tb bb scale_H            % scale size parameter
 global lb1 rb1 lb2 rb2;
 global cir_center
-global frame frame_idx vid video 
+global frame_idx vid video doMRCam
 global fontsize
-global doMRCam
 
 %%
 if contains(rating_type, 'Intensity')
@@ -484,8 +461,7 @@ SetMouse(cir_center(1),cir_center(2));
 while GetSecs - start_t < total_secs
     if doMRCam
         % getting imgaes
-        ima = getsnapshot(vid);
-        frame{frame_idx} = ima;
+        ima = getsnapshot(vid);       
         writeVideo(video,ima);
         frame_idx = frame_idx + 1;
     end
@@ -515,7 +491,7 @@ while GetSecs - start_t < total_secs
     end
     
     msg = double(msg);
-    %DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
+    % DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
     DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
     draw_scale('overall_predict_semicircular');
     Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
