@@ -158,17 +158,16 @@ try
         BIOPAC_trigger(ljHandle, biopac_channel, 'off');
     end
     %% Wating trigger            
-    dat.run_starttime = GetSecs;    
     % gap between 5 key push and the first stimuli (disdaqs: dat.disdaq_sec)    
     if doGetTrigger
         % message 
         % getting trigger
-        tcpipClient = tcpip(fmri_ip, fmri_port);
+        tcpipClient = tcpip(fmri_ip, fmri_port,'Timeout', 60);
         set(tcpipClient,'InputBufferSize',300);
         set(tcpipClient,'Timeout',0.01); % Waiting time in seconds to complete read and write operations
-        
         %
-        display_expmessage('싱크 중...');               
+        display_expmessage('싱크 중...'); 
+        pause(10);
         % Ready 
         fopen(tcpipClient);
         get(tcpipClient, 'BytesAvailable');                     
@@ -184,22 +183,26 @@ try
     % ========================================================== %
     dat.RunStartTime = GetSecs;
     for trial_i = start_trial:16 % start_trial:30
-        %% PREP: START with getting MRcam
+       
+        % Start of Trial
+        trial_t = GetSecs;
+        dat.dat{trial_i}.TrialStartTimestamp = trial_t + (dat.get_trigger_received_timestamp- dat.get_trigger_wait_timestamp);
+        
+        % PREP: START with getting MRcam
         if doMRCam
             % vid (frame) -> video (mp4)
             temp_imgs = getsnapshot(vid);            
             writeVideo(video,temp_imgs);
             frame_idx = frame_idx +1;
         end        
-        % Start of Trial
-        trial_t = GetSecs;
-        dat.dat{trial_i}.TrialStartTimestamp = trial_t;
         % --------------------------------------------------------- %
         %         1. ITI (fixPoint)
         % --------------------------------------------------------- %
         DrawFormattedText(theWindow, double('+'), 'center', 'center', white, [], [], [], 1.2); % as exactly same as function fixPoint(trial_t, ttp , white, '+') % ITI
         Screen('Flip', theWindow);
-        waitsec_fromstarttime_SEP(trial_t, ts.t{runNumber}{trial_i}.ITI);
+        end_time =  ts.t{runNumber}{trial_i}.ITI;
+        %end_time =  ts.t{runNumber}{trial_i}.ITI - (dat.get_trigger_received_timestamp- dat.get_trigger_wait_timestamp);
+        waitsec_fromstarttime_SEP(trial_t,end_time);
         dat.dat{trial_i}.ITI_EndTime=GetSecs;
         
         % --------------------------------------------------------- %
@@ -492,7 +495,7 @@ while GetSecs - start_t < total_secs
     
     msg = double(msg);
     % DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
-    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
+    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy',(window_rect(2)+window_rect(4))/3,'xalign','center','yalign','center');
     draw_scale('overall_predict_semicircular');
     Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
     Screen('Flip', theWindow);
