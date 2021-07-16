@@ -148,7 +148,9 @@ while ~ready2
     theta = rad2deg(theta);
     theta= 180 - theta;
     theta = num2str(theta);
-    DrawFormattedText(theWindow, theta, 'center', 'center', white, [], [], [], 1.2); %Display the degree of the cursur based on cir_center
+    %DrawFormattedText(theWindow, theta, 'center', 'center', white, [], [], [], 1.2); %Display the degree of the cursur based on cir_center
+    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) theta],'win',theWindow,'sx','center','sy',(window_rect(2)+window_rect(4))/3,'xalign','center','yalign','center');
+
     disp(theta); %angle
     Screen('DrawDots', theWindow, [xc yc]', 5, yellow, [0 0], 1);  %dif color
     %Screen(theWindow,'DrawLines', [xc yc]', 5, 255);
