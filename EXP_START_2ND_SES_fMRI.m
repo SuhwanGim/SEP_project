@@ -19,15 +19,16 @@ main(ip,port,2); %START
 %IPs.my_IP 
 %% SETTINGS: Options
 opts = [];
-opts.testmode = 1;    % do test mode (not full screens)
+
+opts.testmode = 0;    % do test mode (not full screens)
 opts.dofmri = 1;        % do fMRI (get fMRI signal)
-opts.obs = 0;         % do sending trigger to observer's computer 
+opts.obs = 1;         % do sending trigger to observer's computer 
 opts.doFace = 1;      % get webcam mode
 opts.Pathway = 1;     % do using pathway 
 %% SETTINGS: IDs
 % should be different
 IDs.ExpID = 'TEST_LME';           % ID for fMRI scanner participants
-IDs.ObsID = 'TEST_200707_Suhwan';           % ID for observer participants
+IDs.ObsID = 'TEST_200714_Jihoon';           % ID for observer participants
 %% generate ts
 % This ts will be genereated before fMRI sessiosn for both estimating task and pain task. 
 ts = generate_ts_SEP('fMRI'); 
@@ -41,11 +42,11 @@ fMRI_task(IDs, ts, sessionNumber, runnumber, IPs, opts)
 
 %%
 runnumber = 2;
-fMRI_task(IDs, ts, runnumber, IPs, opts)
-
+fMRI_task(IDs, ts, sessionNumber, runnumber, IPs, opts)
+ 
 %%  
 runnumber = 3;
-fMRI_task(IDs, ts, runnumber, IPs, opts)
+fMRI_task(IDs, ts, sessionNumber, runnumber, IPs, opts)
 
 %% 
 runnumber = 4;

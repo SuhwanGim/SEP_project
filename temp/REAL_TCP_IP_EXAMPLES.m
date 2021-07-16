@@ -7,7 +7,8 @@ port = 30000; % SERVER PC's Port
 ip_server = '0.0.0.0';
 trg_dat = 100;
 trg_dat = im2double(trg_dat);
-s = whos('data');
+trg_dat = double('메롱');
+s = whos('trg_data');
 tcpipServer = tcpip(ip_server, 30000, 'NetworkRole','server');
 set(tcpipServer, 'OutputBufferSize',s.bytes);
 fopen(tcpipServer);

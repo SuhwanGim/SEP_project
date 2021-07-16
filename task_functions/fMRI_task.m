@@ -246,6 +246,7 @@ try
         fwrite(tcpipServer, trg_dat(:), 'double'); % send data
         fclose(tcpipServer);
         dat.sendTriggerEnd_timestamp = GetSecs;
+        pause(1);
     end
     %% ========================================================= %
     %                   TRIAL START
@@ -443,9 +444,9 @@ global cir_center
 global fontsize
 %%
 if contains(rating_type, 'Intensity')
-    msg = '이번 자극이 얼마나 아팠나요?';
+    msg = '통증 세기';
 elseif contains(rating_type, 'Unpleasantness')
-    msg = '이번 자극이 얼마나 불쾌했나요?';
+    msg = '불쾌';
 end
 
 
@@ -479,7 +480,7 @@ while GetSecs - start_t < total_secs
     
     msg = double(msg);
     %DrawFormattedText(theWindow, msg, 'center', 150, orange, [], [], [], 2);
-    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy','center','xalign','center','yalign','center');
+    DrawFormattedText2([double(sprintf('<size=%d><font=-:lang=ko><color=ffffff>',fontsize)) msg],'win',theWindow,'sx','center','sy',(window_rect(2)+window_rect(4))/3,'xalign','center','yalign','center');
     draw_scale('overall_predict_semicircular');
     Screen('DrawDots', theWindow, [x y], 15, orange, [0 0], 1);
     Screen('Flip', theWindow);
