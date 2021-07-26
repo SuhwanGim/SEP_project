@@ -12,9 +12,10 @@ R1 = [];
 
 if contains(lower(cond),'fmri')
     
-    temp_int = []; 
+    
     % 1. Generating ts for the Stimulus intensity % 16 trials
     for ii = 1:6
+        temp_int = []; 
         for i = 1:4
             %S1{1} = repmat({'LV1'; 'LV2'; 'LV3'; 'LV4'}, 4, 1);
             inte = [1,2,3,4];

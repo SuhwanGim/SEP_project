@@ -177,7 +177,15 @@ try
         dat.get_trigger_received_timestamp = GetSecs; % sync onset        
         fprintf('\n\n received message: %s \n',rawData);
         
-    end            
+    end
+% PREP: START with getting MRcam
+%         if doMRCam
+%             % vid (frame) -> video (mp4)
+%             temp_imgs = getsnapshot(vid);            
+%             writeVideo(video,temp_imgs);
+%             frame_idx = frame_idx +1;
+%         end        
+    
     %% ========================================================= %
     %                   TRIAL START
     % ========================================================== %
@@ -186,15 +194,7 @@ try
        
         % Start of Trial
         trial_t = GetSecs;
-        dat.dat{trial_i}.TrialStartTimestamp = trial_t + (dat.get_trigger_received_timestamp- dat.get_trigger_wait_timestamp);
-        
-        % PREP: START with getting MRcam
-%         if doMRCam
-%             % vid (frame) -> video (mp4)
-%             temp_imgs = getsnapshot(vid);            
-%             writeVideo(video,temp_imgs);
-%             frame_idx = frame_idx +1;
-%         end        
+        dat.dat{trial_i}.TrialStartTimestamp = trial_t + (dat.get_trigger_received_timestamp - dat.get_trigger_wait_timestamp);       
         % --------------------------------------------------------- %
         %         1. ITI (fixPoint)
         % --------------------------------------------------------- %
@@ -229,6 +229,7 @@ try
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
                 Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[],[],[],[],[],[]);
+                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[90],[],[],[],[],[]);
             end
             % Get Mouse
             %rec=rec+1;
