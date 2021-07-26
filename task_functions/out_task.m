@@ -189,12 +189,12 @@ try
         dat.dat{trial_i}.TrialStartTimestamp = trial_t + (dat.get_trigger_received_timestamp- dat.get_trigger_wait_timestamp);
         
         % PREP: START with getting MRcam
-        if doMRCam
-            % vid (frame) -> video (mp4)
-            temp_imgs = getsnapshot(vid);            
-            writeVideo(video,temp_imgs);
-            frame_idx = frame_idx +1;
-        end        
+%         if doMRCam
+%             % vid (frame) -> video (mp4)
+%             temp_imgs = getsnapshot(vid);            
+%             writeVideo(video,temp_imgs);
+%             frame_idx = frame_idx +1;
+%         end        
         % --------------------------------------------------------- %
         %         1. ITI (fixPoint)
         % --------------------------------------------------------- %
@@ -212,8 +212,6 @@ try
         rec_i = 0;
         
         t=GetSecs;
-        xc = [];
-        yc = [];
         SetMouse(cir_center(1),cir_center(2));
         radius = ((12*W/18)-(6*W/18))/2; % radius
         while true
