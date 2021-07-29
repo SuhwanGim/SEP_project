@@ -76,7 +76,7 @@ if doMRCam
     frame_idx = 1;
     imaqreset;
     info=imaqhwinfo;
-    vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' ); % set resoultions 
+    vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (720x480)' ); % set resoultions 
     video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
     triggerconfig(vid, 'manual');
     start(vid)
@@ -96,7 +96,7 @@ else
     window_info = Screen('Resolution', window_num);
     %window_rect = [0 0 1920 1080];
     window_rect = [0 0 window_info.width window_info.height]; % full screen
-    fontsize = 36;
+    fontsize = 44;
     HideCursor(); % ShowCursor 
 end
 W = window_rect(3); %width of screen

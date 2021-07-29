@@ -123,6 +123,7 @@ for i = 1:numel(reg.FinalLMH_5Level)
     end
 end
 stim_degree=cell2mat(degree);
+dat.stim_degree = stim_degree; % save 
 %% SETUP: Screen size
 Screen('Clear');
 Screen('CloseAll');
@@ -137,7 +138,7 @@ else
     window_info = Screen('Resolution', window_num);
     %window_rect = [0 0 1920 1080];
     window_rect = [0 0 window_info.width window_info.height]; % full screen
-    fontsize = 36;
+    fontsize = 44;
     HideCursor();
 end
 W = window_rect(3); %width of screen
@@ -187,6 +188,11 @@ Screen('TextSize', theWindow, fontsize);
 Screen('TextFont', theWindow, font); % setting font
 %% START: SCREEN FOR PARTICIPANTS
 try
+    %% PREP: BEFORE SCAN 
+    % Themode_test (with highest degree based on calibration data)
+    pathway_test(ip, port, 'MRI_SEP', reg);
+    % Explain grid-scale every run
+    exp_scale('overall',0);
     %% PREP: INSTRUCTION before task
     while (1)
         [~,~,keyCode] = KbCheck;

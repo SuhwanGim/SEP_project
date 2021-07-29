@@ -64,13 +64,13 @@ switch type
                 disp('Start');
                 main(ip, port, 2);
                 
-                sTime=GetSecs;         %      
+                sTime=GetSecs;         %
                 msg='';
                 display_expmessage(msg);
                 
                 disp('Done');
             end
-            while GetSecs - sTime <13 
+            while GetSecs - sTime <13
                 % pause
             end
         end
@@ -105,13 +105,13 @@ switch type
                 %disp('Start');
                 main(ip, port, 2);
                 
-                sTime=GetSecs;         %      
+                sTime=GetSecs;         %
                 msg='';
                 display_expmessage(msg);
                 
                 disp('Done');
             end
-            while GetSecs - sTime <14.5 
+            while GetSecs - sTime <14.5
                 % pause
             end
         end
@@ -130,7 +130,7 @@ switch type
             end
             msg='잠시만 기다려 주세요';
             display_expmessage(msg);
-
+            
             main(ip, port, 1, degree);
             WaitSecs(0.5);
             clc;
@@ -150,7 +150,45 @@ switch type
             msg='';
             display_expmessage(msg);
         end
-        while GetSecs - sTime <14.5 
+        while GetSecs - sTime <14.5
+            % pause
+        end
+        msg=double('확인하였습니다.\n다음으로는 척도 확인을 하겠습니다 (space)');
+        
+    case 'MRI_SEP'
+        if ~isempty(msg)
+            PathPrg = load_PathProgram('MPC');
+            % Find the highest themal degree based on the calibration procedure
+            for iii=1:length(PathPrg) %find degree
+                if reg.FinalLMH_5Level(5) == PathPrg{iii,1}
+                    degree = bin2dec(PathPrg{iii,2});
+                else
+                    % do nothing
+                end
+            end
+            msg='잠시만 기다려 주세요';
+            display_expmessage(msg);
+            
+            main(ip, port, 1, degree);
+            WaitSecs(0.5);
+            clc;
+            
+            %disp('Ready to start');
+            main(ip, port, 2);
+            WaitSecs(2);
+            clc;
+            
+            %disp('Start');
+            main(ip, port, 2);
+            WaitSecs(0.5);
+            clc;
+            %disp('Done');
+            
+            sTime=GetSecs;         %
+            msg='';
+            display_expmessage(msg);
+        end
+        while GetSecs - sTime <14.5
             % pause
         end
         msg=double('확인하였습니다.\n다음으로는 척도 확인을 하겠습니다 (space)');
