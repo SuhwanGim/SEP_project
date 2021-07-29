@@ -41,7 +41,7 @@ while GetSecs - starttime < duration
     frame = getsnapshot(vid);
     image(frame);
    
-    writeVideo(video,frame ); %write the image to file
+    %writeVideo(video,frame ); %write the image to file
     snapnow;
     t(i) = GetSecs - starttime;
      i = i+1;

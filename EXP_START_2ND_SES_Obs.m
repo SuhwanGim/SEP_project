@@ -22,7 +22,7 @@ opts.fmri_pc = IPs.fMRI_ip;
 opts.fmri_pot = IPs.fMRI_port;
 %% SETTINGS: IDs
 SID.ExpID = 'TEST_210707_Suhwan';           % ID for fMRI scanner participants
-SID.ObsID = 'TEST_210714_Jihoon';           % ID for observer participants
+SID.ObsID = 'TEST_210726_test';           % ID for observer participants
 %% generate ts
 ts = generate_ts_SEP('fMRI'); % generate trial sequences 
 % ts should be made before fMRI experiments 
@@ -30,10 +30,10 @@ ts = generate_ts_SEP('fMRI'); % generate trial sequences
 sessionNumber = 1;
 %% START 
 runNumber = 1 
-out_task(SID, ts, sessionNumber, runNumber, IPs, opts)
+out_task(SID, ts, sessionNumber, runNumber, IPs, opts) 
 %out_task(IDs, ts, runNumber, IPs, opts)
 
-%%
+%% 
 runNumber = 2; 
 out_task(SID,  ts, sessionNumber, runNumber, IPs, opts)
 

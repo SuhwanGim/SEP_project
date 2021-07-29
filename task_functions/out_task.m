@@ -78,6 +78,8 @@ if doMRCam
     info=imaqhwinfo;
     vid = videoinput(info.InstalledAdaptors{1}, 1,'NTSC_M:RGB24 (640x480)' ); % set resoultions 
     video = VideoWriter(fullfile(savedir,'fMRI_VID',sprintf('fMRI_FACE_%s_SESS%02d_RUN%02d.mp4',SID.ExpID,sessionNumber,runNumber)),'MPEG-4'); %create the video object    
+    triggerconfig(vid, 'manual');
+    start(vid)
     open(video);
 end
 %% SETUP: Screen size
@@ -228,7 +230,7 @@ try
                 frame_idx = frame_idx + 1;
                 %show webcam images on Screen
                 tex1 = Screen('MakeTexture', theWindow, ima, [], [],[],[],[]);
-                Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[],[],[],[],[],[]);
+                %Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[],[],[],[],[],[]);
                 Screen('DrawTexture', theWindow,tex1 ,[], [5*W/18 1*H/18 13*W/18 9*H/18],[90],[],[],[],[],[]);
             end
             % Get Mouse
